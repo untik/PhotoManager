@@ -1,0 +1,9 @@
+[submodule "modules/exiv2"]
+	path = modules/exiv2
+	url = https://github.com/Exiv2/exiv2.git
+[submodule "modules/expat"]
+	path = modules/expat
+	url = https://github.com/libexpat/libexpat.git
+[submodule "modules/zlib"]
+	path = modules/zlib
+	url = https://github.com/madler/zlib.git
