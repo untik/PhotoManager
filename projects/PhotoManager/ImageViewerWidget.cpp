@@ -5,42 +5,6 @@
 #include <QElapsedTimer>
 #include <QWheelEvent>
 #include <QDebug>
-#include <QtConcurrent>
-#include <QApplication>
-
-namespace
-{
-	// for the explanation of the trick, check out:
-	// http://www.virtualdub.org/blog/pivot/entry.php?id=116
-	// http://www.compuphase.com/graphic/scale3.htm
-	// https://blog.qt.io/blog/2009/01/26/creating-thumbnail-preview/
-	// https://blog.qt.io/blog/2009/01/20/50-scaling-of-argb32-image/
-#define AVG(a,b)  ( ((((a)^(b)) & 0xfefefefeUL) >> 1) + ((a)&(b)) )
-
-	QImage halfSized(const QImage& source)
-	{
-		QImage dest(source.size() * 0.5, QImage::Format_ARGB32_Premultiplied);
-
-		const quint32 *src = reinterpret_cast<const quint32*>(source.bits());
-		int sx = source.bytesPerLine() >> 2;
-		int sx2 = sx << 1;
-
-		quint32 *dst = reinterpret_cast<quint32*>(dest.bits());
-		int dx = dest.bytesPerLine() >> 2;
-		int ww = dest.width();
-		int hh = dest.height();
-
-		for (int y = hh; y; --y, dst += dx, src += sx2) {
-			const quint32 *p1 = src;
-			const quint32 *p2 = src + sx;
-			quint32 *q = dst;
-			for (int x = ww; x; --x, q++, p1 += 2, p2 += 2)
-				*q = AVG(AVG(p1[0], p1[1]), AVG(p2[0], p2[1]));
-		}
-
-		return dest;
-	}
-}
 
 ImageViewerWidget::ImageViewerWidget(QWidget* parent)
 	: QWidget(parent)
@@ -176,10 +140,10 @@ void ImageViewerWidget::paintEvent(QPaintEvent* event)
 	else
 		painter.fillRect(QRect(QPoint(0, 0), viewportSize), QColor("#1e1e1e"));
 
+	painter.drawImage(centeredRect, preparedImage.image);
+
 	if (showImageInformation && !isMarked)
 		renderDescription(&painter, baseImage, viewportSize);
-
-	painter.drawImage(centeredRect, preparedImage.image);
 
 	if (isMarked)
 		painter.fillRect(centeredRect, QBrush(QColor(0, 0, 0, 200), Qt::SolidPattern));
@@ -258,14 +222,25 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	int separator = 12;
 
 	QFont smallFont("Segoe UI", 10);
-	int smallLineHeight = QFontMetrics(smallFont).height();
+	QFontMetrics smallMetrics = QFontMetrics(smallFont);
+	int smallLineHeight = smallMetrics.height();
 
 	QFont largeFont("Segoe UI", 14);
-	int largeLineHeight = QFontMetrics(largeFont).height();
+	QFontMetrics largeMetrics = QFontMetrics(largeFont);
+	int largeLineHeight = largeMetrics.height();
 
 	QFont markerFont("Segoe UI", 30, 200);
 	int markerLineHeight = QFontMetrics(markerFont).tightBoundingRect("12345").height() + 8;
 
+	// Draw background
+	int maxWidth = 150;
+	int backgroundBuffer = 10;
+	for (int i = 0; i < items.count(); i++) {
+		const MetadataItem& item = items.at(i);
+		maxWidth = qMax(maxWidth, xOffset + smallMetrics.width(item.stringValue) + backgroundBuffer);
+	}
+	maxWidth = qMax(maxWidth, xOffset + largeMetrics.width(image.fileName()) + backgroundBuffer);
+	painter->fillRect(QRect(0, 0, maxWidth, viewportSize.height()), QColor::fromRgb(30, 30, 30, 180));
 
 	// File index
 	yOffset += largeLineHeight;
@@ -407,56 +382,6 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	//// Render markers
 	//painter->setFont(QFont("Segoe UI", 90, 200));
 	////int markerLineHeight = painter->fontMetrics().height() * 0.6;
-
-	//int markerOffset = 70;
-	//int circleSize = 120;
-
-	//if (imageMarkerState.value('1', false)) {
-	//	painter->setPen(QPen(QColor("#909090"), 14));
-	//	painter->drawText(viewportSize.width() - (markerOffset + 3), 1 * markerLineHeight, QString("1"));
-	//}
-	//if (imageMarkerState.value('2', false)) {
-	//	painter->setPen(QPen(QColor("#1f78b4"), 14));
-	//	painter->drawText(viewportSize.width() - markerOffset, 2 * markerLineHeight, QString("2"));
-	//}
-	//if (imageMarkerState.value('3', false)) {
-	//	painter->setPen(QPen(QColor("#33a02c"), 14));
-	//	painter->drawText(viewportSize.width() - markerOffset, 3 * markerLineHeight, QString("3"));
-	//}
-	//if (imageMarkerState.value('4', false)) {
-	//	painter->setPen(QPen(QColor("#e31a1c"), 14));
-	//	painter->drawText(viewportSize.width() - (markerOffset + 3), 4 * markerLineHeight, QString("4"));
-	//}
-	//if (imageMarkerState.value('5', false)) {
-	//	painter->setPen(QPen(QColor("#ff7f00"), 14));
-	//	painter->drawText(viewportSize.width() - markerOffset, 5 * markerLineHeight, QString("5"));
-	//}
-
-	//if (highlightedMarker == '1') {
-	//	painter->setPen(QPen(QColor("#909090"), 16));
-	//	//painter->drawText(viewportSize.width() - (markerOffset + 3), 1 * markerLineHeight, QString("1"));
-	//	painter->drawEllipse(viewportSize.width() - (markerOffset + 28), -7, circleSize, circleSize);
-	//}
-	//if (highlightedMarker == '2') {
-	//	painter->setPen(QPen(QColor("#1f78b4"), 16));
-	//	//painter->drawText(viewportSize.width() - markerOffset, 2 * markerLineHeight, QString("2"));
-	//	painter->drawEllipse(viewportSize.width() - (markerOffset + 28), 1 * markerLineHeight - 7, circleSize, circleSize);
-	//}
-	//if (highlightedMarker == '3') {
-	//	painter->setPen(QPen(QColor("#33a02c"), 16));
-	//	//painter->drawText(viewportSize.width() - markerOffset, 3 * markerLineHeight, QString("3"));
-	//	painter->drawEllipse(viewportSize.width() - (markerOffset + 28), 2 * markerLineHeight - 7, circleSize, circleSize);
-	//}
-	//if (highlightedMarker == '4') {
-	//	painter->setPen(QPen(QColor("#e31a1c"), 16));
-	//	//painter->drawText(viewportSize.width() - (markerOffset + 3), 4 * markerLineHeight, QString("4"));
-	//	painter->drawEllipse(viewportSize.width() - (markerOffset + 28), 3 * markerLineHeight - 7, circleSize, circleSize);
-	//}
-	//if (highlightedMarker == '5') {
-	//	painter->setPen(QPen(QColor("#ff7f00"), 16));
-	//	//painter->drawText(viewportSize.width() - markerOffset, 5 * markerLineHeight, QString("5"));
-	//	painter->drawEllipse(viewportSize.width() - (markerOffset + 28), 4 * markerLineHeight - 7, circleSize, circleSize);
-	//}
 }
 
 void ImageViewerWidget::recalculateOffsetLimit()
@@ -479,28 +404,8 @@ void ImageViewerWidget::recalculateOffsetLimit()
 	if (sourceAreaSize.height() > imageSize.height())
 		sourceAreaSize.setHeight(imageSize.height());
 
-	//// Point in original image which should be centered in viewport
-	//QPoint centerPoint(imageSize.width() / 2, imageSize.height() / 2);
-	//centerPoint = centerPoint + imageOffset;
-
-	//// Ensure center point lies inside the original image
-	//centerPoint.setX(qBound(0, centerPoint.x(), imageSize.width()));
-	//centerPoint.setY(qBound(0, centerPoint.y(), imageSize.height()));
-
-	//// Calculate origin point for clipped rectangle inside original image
-	//QPoint sourceTopLeft(centerPoint.x() - sourceAreaSize.width() / 2, centerPoint.y() - sourceAreaSize.height() / 2);
-
-	//sourceTopLeft.setX(qBound(0, sourceTopLeft.x(), imageSize.width() - sourceAreaSize.width()));
-	//sourceTopLeft.setY(qBound(0, sourceTopLeft.y(), imageSize.height() - sourceAreaSize.height()));
-
-	//imageOffset.setX(qBound(-imageSize.width() / 2, imageOffset.x(), imageSize.width() / 2));
-	//imageOffset.setY(qBound(-imageSize.height() / 2, imageOffset.y(), imageSize.height() / 2));
-
 	imageOffset.setX(qBound(-imageSize.width() / 2 + sourceAreaSize.width() / 2, imageOffset.x(), imageSize.width() / 2 - sourceAreaSize.width() / 2));
 	imageOffset.setY(qBound(-imageSize.height() / 2 + sourceAreaSize.height() / 2, imageOffset.y(), imageSize.height() / 2 - sourceAreaSize.height() / 2));
-
-	//imageOffset.setX(qBound(sourceAreaSize.width() / 2, imageOffset.x(), imageSize.width() - sourceAreaSize.width() / 2));
-	//imageOffset.setY(qBound(sourceAreaSize.height() / 2, imageOffset.y(), imageSize.height() - sourceAreaSize.height() / 2));
 }
 
 void ImageViewerWidget::recalculateCachedPixmap()
