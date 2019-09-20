@@ -1,6 +1,6 @@
 @echo off
 
-set qtdir=c:\Qt\5.9.7\msvc2017_64
+set qtdir=c:\Qt\5.12.5\msvc2017_64
 set projectdir=%~dp0
 
 set vcredistdir="c:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Redist\MSVC\14.16.27012\x64\Microsoft.VC141.CRT"
