@@ -56,6 +56,9 @@
     <ClCompile Include="MarkerFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Settings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="PhotoManagerWindow.ui">
@@ -100,6 +103,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="MarkerType.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Settings.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -148,6 +148,7 @@
     <ClCompile Include="MetadataCollection.cpp" />
     <ClCompile Include="MetadataReader.cpp" />
     <ClCompile Include="PhotoManagerWindow.cpp" />
+    <ClCompile Include="Settings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="PhotoManagerWindow.h">
@@ -160,6 +161,7 @@
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_PhotoManagerWindow.h" />
     <ClInclude Include="Image.h" />
+    <ClInclude Include="Settings.h" />
     <QtMoc Include="ImageFileList.h">
     </QtMoc>
     <ClInclude Include="MarkerFile.h" />
