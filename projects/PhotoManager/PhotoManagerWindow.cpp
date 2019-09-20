@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFileDialog>
+#include <QMessageBox>
 #include <QDebug>
 #include "ImageProcessor.h"
 #include "Image.h"
@@ -41,7 +42,21 @@ PhotoManagerWindow::PhotoManagerWindow(const QStringList& files, QWidget* parent
 	imageProcessor->preloadImage(fileList->fileAtOffset(1).fullFilePath);
 	imageProcessor->preloadImage(fileList->fileAtOffset(-1).fullFilePath);
 
-	showFullScreen();
+	QString settingsPath(qApp->applicationFilePath());
+	settingsPath = QFileInfo(settingsPath).absoluteDir().absoluteFilePath("PhotoManager.json");
+
+	settings.load(settingsPath);
+	settings.initializeValue("window.fullscreen", true);
+	settings.initializeValue("window.maximized", true);
+
+	Qt::WindowStates windowStates = Qt::WindowActive;
+	if (settings.value("window.fullscreen").toBool())
+		windowStates = (windowStates | Qt::WindowFullScreen);
+	if (settings.value("window.maximized").toBool())
+		windowStates = (windowStates | Qt::WindowMaximized);
+
+	setWindowState(windowStates);
+	show();
 }
 
 PhotoManagerWindow::~PhotoManagerWindow()
@@ -80,17 +95,14 @@ void PhotoManagerWindow::keyPressEvent(QKeyEvent* event)
 				nextFile();
 			break;
 		case Qt::Key_Escape:
-			QApplication::exit();
+			this->close();
 			break;
 		case Qt::Key_O:
 			imageViewer->optimize = !imageViewer->optimize;
 			imageViewer->recalculate();
 			break;
 		case Qt::Key_F:
-			if (isFullScreen())
-				showNormal();
-			else
-				showFullScreen();
+			setWindowState(windowState() ^ Qt::WindowFullScreen);
 			break;
 		case Qt::Key_X:
 			imageViewer->setMarkerState('X', fileList->toggleCurrentImageMarker(MarkerDelete));
@@ -139,6 +151,20 @@ void PhotoManagerWindow::mousePressEvent(QMouseEvent* event)
 		case Qt::MouseButton::ForwardButton:
 			nextFile();
 			break;
+	}
+}
+
+void PhotoManagerWindow::closeEvent(QCloseEvent* event)
+{
+	settings.save();
+	QApplication::exit();
+}
+
+void PhotoManagerWindow::changeEvent(QEvent* event)
+{
+	if (event->type() == QEvent::WindowStateChange) {
+		settings.value("window.fullscreen") = this->windowState().testFlag(Qt::WindowFullScreen);
+		settings.value("window.maximized") = this->windowState().testFlag(Qt::WindowMaximized);
 	}
 }
 

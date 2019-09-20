@@ -3,6 +3,7 @@
 #include <QtWidgets/QMainWindow>
 #include "ui_PhotoManagerWindow.h"
 #include "MarkerType.h"
+#include "Settings.h"
 
 class ImageViewerWidget;
 class ImageProcessor;
@@ -21,6 +22,8 @@ public:
 protected:
 	void keyPressEvent(QKeyEvent* event) override;
 	void mousePressEvent(QMouseEvent* event) override;
+	void closeEvent(QCloseEvent* event) override;
+	void changeEvent(QEvent* event) override;
 
 private slots:
 	void imageLoaded(const Image& image);
@@ -36,4 +39,5 @@ private:
 	ImageViewerWidget* imageViewer;
 	ImageProcessor* imageProcessor;
 	ImageFileList* fileList;
+	Settings settings;
 };
