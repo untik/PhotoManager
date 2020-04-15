@@ -53,15 +53,22 @@ void ImageViewerWidget::zoom(ZoomOperation zoomOperation)
 	double scaleFit = qMin(scale1, scale2);
 
 	QVector<double> zoomValues;
-	zoomValues << scaleFit << 0.015625 << 0.03125 << 0.0625 << 0.125 << 0.25 << 0.5 << 1 << 2 << 4 << 8 << 16;
+	zoomValues << 0.015625 << 0.03125 << 0.0625 << 0.125 << 0.25 << 0.5 << 1 << 2 << 4 << 8 << 16;
 
 	bool containsCurrent = false;
+	bool containsScaleFit = false;
 	for (int i = 0; i < zoomValues.count(); i++) {
-		if (std::abs(zoomValues.at(i) - imageZoomLevel) <= Tolerance)
+		const double value = zoomValues.at(i);
+		if (std::abs(value - imageZoomLevel) <= Tolerance)
 			containsCurrent = true;
+		if (std::abs(value - scaleFit) <= Tolerance)
+			containsScaleFit = true;
 	}
 	if (!containsCurrent)
 		zoomValues.append(imageZoomLevel);
+	if (!containsScaleFit)
+		zoomValues.append(scaleFit);
+
 	std::sort(zoomValues.begin(), zoomValues.end());
 	int currentZoomIndex = findClosestValueIndex(zoomValues, imageZoomLevel);
 
