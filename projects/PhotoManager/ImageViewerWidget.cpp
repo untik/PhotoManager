@@ -64,10 +64,15 @@ void ImageViewerWidget::zoom(ZoomOperation zoomOperation)
 		if (std::abs(value - scaleFit) <= Tolerance)
 			containsScaleFit = true;
 	}
-	if (!containsCurrent)
-		zoomValues.append(imageZoomLevel);
-	if (!containsScaleFit)
-		zoomValues.append(scaleFit);
+	if (qFuzzyCompare(imageZoomLevel, scaleFit)) {
+		if (!containsCurrent && !containsScaleFit)
+			zoomValues.append(imageZoomLevel);
+	} else {
+		if (!containsCurrent)
+			zoomValues.append(imageZoomLevel);
+		if (!containsScaleFit)
+			zoomValues.append(scaleFit);
+	}
 
 	std::sort(zoomValues.begin(), zoomValues.end());
 	int currentZoomIndex = findClosestValueIndex(zoomValues, imageZoomLevel);
