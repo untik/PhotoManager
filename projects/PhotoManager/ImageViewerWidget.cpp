@@ -230,7 +230,7 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	MetadataCollection items = image.metadata();
 
 	int xOffset = 5;
-	int yOffset = 4;
+	int yOffset = 0;
 	int separator = 12;
 
 	QFont smallFont("Segoe UI", 10);
@@ -260,7 +260,7 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	painter->setPen(QColor(Qt::white));
 	painter->drawText(xOffset, yOffset, QString("%1 / %2").arg(currentImageNumber).arg(currentImageCount));
 
-	yOffset += 5;
+	yOffset += 3;
 
 	// File name
 	yOffset += largeLineHeight;
