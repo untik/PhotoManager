@@ -1,12 +1,12 @@
 @echo off
 
-set qtdir=c:\Qt\5.12.6\msvc2017_64
+set qtdir=c:\Qt\5.15.2\msvc2019_64
 set projectdir=%~dp0
 
-set vcredistdir="c:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Redist\MSVC\14.16.27012\x64\Microsoft.VC141.CRT"
-set vcredistdird="c:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Redist\MSVC\14.16.27012\debug_nonredist\x64\Microsoft.VC141.DebugCRT"
-set ucrtdir="c:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x64"
-set ucrtdird="c:\Program Files (x86)\Windows Kits\10\bin\10.0.17134.0\x64\ucrt"
+set vcredistdir="c:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.29.30036\x64\Microsoft.VC142.CRT\"
+set vcredistdird="c:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.29.30036\debug_nonredist\x64\Microsoft.VC142.DebugCRT\"
+set ucrtdir="c:\Program Files (x86)\Windows Kits\10\Redist\10.0.18362.0\ucrt\DLLs\x64\"
+set ucrtdird="c:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\ucrt\"
 
 
 rem Create bin, bin_debug directories
@@ -66,6 +66,9 @@ copy /Y %qtdir%\plugins\imageformats\qwebp.dll %projectdir%bin64\imageformats\qw
 echo \bin64\msvcp140.dll
 copy /Y %vcredistdir%\msvcp140.dll %projectdir%bin64\msvcp140.dll
 
+echo \bin64\msvcp140_1.dll
+copy /Y %vcredistdir%\msvcp140_1.dll %projectdir%bin64\msvcp140_1.dll
+
 echo \bin64\vcruntime140.dll
 copy /Y %vcredistdir%\vcruntime140.dll %projectdir%bin64\vcruntime140.dll
 
@@ -106,6 +109,9 @@ copy /Y %qtdir%\plugins\imageformats\qwebpd.dll %projectdir%bin64_debug\imagefor
 
 echo \bin64_debug\msvcp140d.dll
 copy /Y %vcredistdird%\msvcp140d.dll %projectdir%bin64_debug\msvcp140d.dll
+
+echo \bin64_debug\msvcp140_1d.dll
+copy /Y %vcredistdird%\msvcp140_1d.dll %projectdir%bin64_debug\msvcp140_1d.dll
 
 echo \bin64_debug\vcruntime140d.dll
 copy /Y %vcredistdird%\vcruntime140d.dll %projectdir%bin64_debug\vcruntime140d.dll
