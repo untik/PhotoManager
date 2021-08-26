@@ -30,7 +30,7 @@ void MarkerFile::load()
 		QFileInfo fileInfo(listFile);
 		for (int i = 0; i < lines.count(); i++) {
 			QString lineText = lines.at(i).trimmed();
-			if (!lineText.isEmpty())
+			if (!lineText.isEmpty() && !lineText.endsWith(".*/n"))
 				markedFiles.append(fileInfo.absolutePath() + "/" + lineText);
 		}
 		file.write(text.toUtf8());
@@ -53,6 +53,8 @@ void MarkerFile::save()
 			QFileInfo fileInfo(markedFiles.at(i));
 			text.append(fileInfo.fileName());
 			text.append("\n");
+			text.append(fileInfo.baseName());
+			text.append(".*\n"); // Ignore file extension when selecting
 		}
 		file.write(text.toUtf8());
 	}
