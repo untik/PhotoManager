@@ -84,7 +84,7 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 			else if (key == "Exif.Photo.FNumber") {
 				MetadataItem item("Aperture", key);
 				Exiv2::Rational val = i->toRational();
-				item.stringValue = QString("f %1").arg((double)val.first / val.second);
+				item.stringValue = QString("ƒ/%1").arg((double)val.first / val.second);
 				items.append(item);
 			}
 			else if (key == "Exif.Photo.ExposureProgram") {
