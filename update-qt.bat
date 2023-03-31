@@ -57,6 +57,9 @@ copy /Y %qtdir%\plugins\imageformats\qgif.dll %projectdir%bin64\imageformats\qgi
 echo \bin64\imageformats\qjpeg.dll
 copy /Y %qtdir%\plugins\imageformats\qjpeg.dll %projectdir%bin64\imageformats\qjpeg.dll
 
+echo \bin64\imageformats\qtga.dll
+copy /Y %qtdir%\plugins\imageformats\qtga.dll %projectdir%bin64\imageformats\qtga.dll
+
 echo \bin64\imageformats\qtiff.dll
 copy /Y %qtdir%\plugins\imageformats\qtiff.dll %projectdir%bin64\imageformats\qtiff.dll
 
@@ -100,6 +103,9 @@ copy /Y %qtdir%\plugins\imageformats\qgifd.dll %projectdir%bin64_debug\imageform
 
 echo \bin64_debug\imageformats\qjpegd.dll
 copy /Y %qtdir%\plugins\imageformats\qjpegd.dll %projectdir%bin64_debug\imageformats\qjpegd.dll
+
+echo \bin64_debug\imageformats\qtgad.dll
+copy /Y %qtdir%\plugins\imageformats\qtgad.dll %projectdir%bin64_debug\imageformats\qtgad.dll
 
 echo \bin64_debug\imageformats\qtiffd.dll
 copy /Y %qtdir%\plugins\imageformats\qtiffd.dll %projectdir%bin64_debug\imageformats\qtiffd.dll
