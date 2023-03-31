@@ -171,6 +171,9 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 	catch (Exiv2::Error& e) {
 		return MetadataCollection();
 	}
+	catch (Exiv2::WError& e) {
+		return MetadataCollection();
+	}
 
 	// Postprocessing for combined values
 	MetadataItem* panasonicShootingMode = items.findKey("Exif.Panasonic.ShootingMode");
