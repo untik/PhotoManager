@@ -33,6 +33,7 @@ private:
 	void previousFile(int multiplier = 1);
 	void toggleMarker(MarkerType marker, bool singleMarker);
 	void exportCurrentImage();
+	void deleteCurrentImage(bool isShiftActive);
 
 private:
 	Ui::PhotoManagerWindowClass ui;

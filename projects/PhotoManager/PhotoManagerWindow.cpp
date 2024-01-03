@@ -139,6 +139,10 @@ void PhotoManagerWindow::keyPressEvent(QKeyEvent* event)
 			// Export current image
 			exportCurrentImage();
 			break;
+		case Qt::Key_Delete:
+			// Delete or trash current image
+			deleteCurrentImage(event->modifiers().testFlag(Qt::ShiftModifier));
+			break;
 	}
 }
 
@@ -224,4 +228,24 @@ void PhotoManagerWindow::exportCurrentImage()
 	QSize size(img.width() / 2, img.height() / 2);
 	img = img.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 	img.save(fileName, nullptr, 98);
+}
+
+void PhotoManagerWindow::deleteCurrentImage(bool isShiftActive)
+{
+	QString imageFile = imageViewer->currentImage().absoluteFilePath();
+	if (!imageFile.isEmpty()) {
+		if (isShiftActive) {
+			if (QMessageBox::question(this, "Permanently Delete File", "Do you want to permanently delete current image?", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::StandardButton::Yes) {
+				nextFile();
+				fileList->reloadFileList();
+				QFile::remove(imageFile);
+			}
+		} else {
+			if (QMessageBox::question(this, "Move File to Trash", "Do you want to move current image to trash?", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::StandardButton::Yes) {
+				nextFile();
+				fileList->reloadFileList();
+				QFile::moveToTrash(imageFile);
+			}
+		}
+	}
 }
