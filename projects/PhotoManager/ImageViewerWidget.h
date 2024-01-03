@@ -4,6 +4,9 @@
 #include <QMap>
 #include "Image.h"
 
+class QSvgRenderer;
+class QMovie;
+
 class ImageViewerWidget : public QWidget
 {
 	Q_OBJECT
@@ -53,6 +56,8 @@ private:
 	void invalidateCache();
 	int findClosestValueIndex(const QVector<double>& values, double x);
 
+	void movieFrameChanged(int frameNumber);
+
 private:
 	struct PreparedImage
 	{
@@ -63,6 +68,11 @@ private:
 
 	Image baseImage;
 	PreparedImage preparedImage;
+	QSvgRenderer* svgRenderer = nullptr;
+	double svgScaleX;
+	double svgScaleY;
+	QMovie* animationPlayer = nullptr;
+	int animationPlayerPreparedFrame = -1;
 
 	double imageZoomLevel;
 	double imageRotation;

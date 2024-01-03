@@ -48,6 +48,9 @@ copy /Y %qtdir%\bin\Qt5Gui.dll %projectdir%bin64\Qt5Gui.dll
 echo \bin64\Qt5Widgets.dll
 copy /Y %qtdir%\bin\Qt5Widgets.dll %projectdir%bin64\Qt5Widgets.dll
 
+echo \bin64\Qt5Svg.dll
+copy /Y %qtdir%\bin\Qt5Svg.dll %projectdir%bin64\Qt5Svg.dll
+
 echo \bin64\platforms\qwindows.dll
 copy /Y %qtdir%\plugins\platforms\qwindows.dll %projectdir%bin64\platforms\qwindows.dll
 
@@ -65,6 +68,12 @@ copy /Y %qtdir%\plugins\imageformats\qtiff.dll %projectdir%bin64\imageformats\qt
 
 echo \bin64\imageformats\qwebp.dll
 copy /Y %qtdir%\plugins\imageformats\qwebp.dll %projectdir%bin64\imageformats\qwebp.dll
+
+echo \bin64\imageformats\qico.dll
+copy /Y %qtdir%\plugins\imageformats\qico.dll %projectdir%bin64\imageformats\qico.dll
+
+echo \bin64\imageformats\qsvg.dll
+copy /Y %qtdir%\plugins\imageformats\qsvg.dll %projectdir%bin64\imageformats\qsvg.dll
 
 echo \bin64\msvcp140.dll
 copy /Y %vcredistdir%\msvcp140.dll %projectdir%bin64\msvcp140.dll
@@ -95,6 +104,9 @@ copy /Y %qtdir%\bin\Qt5Guid.dll %projectdir%bin64_debug\Qt5Guid.dll
 echo \bin64_debug\Qt5Widgetsd.dll
 copy /Y %qtdir%\bin\Qt5Widgetsd.dll %projectdir%bin64_debug\Qt5Widgetsd.dll
 
+echo \bibin64_debugn64\Qt5Svgd.dll
+copy /Y %qtdir%\bin\Qt5Svgd.dll %projectdir%bin64_debug\Qt5Svgd.dll
+
 echo \bin64_debug\platforms\qwindowsd.dll
 copy /Y %qtdir%\plugins\platforms\qwindowsd.dll %projectdir%bin64_debug\platforms\qwindowsd.dll
 
@@ -112,6 +124,12 @@ copy /Y %qtdir%\plugins\imageformats\qtiffd.dll %projectdir%bin64_debug\imagefor
 
 echo \bin64_debug\imageformats\qwebpd.dll
 copy /Y %qtdir%\plugins\imageformats\qwebpd.dll %projectdir%bin64_debug\imageformats\qwebpd.dll
+
+echo \bin64_debug\imageformats\qicod.dll
+copy /Y %qtdir%\plugins\imageformats\qicod.dll %projectdir%bin64_debug\imageformats\qicod.dll
+
+echo \bin64_debug\imageformats\qsvgd.dll
+copy /Y %qtdir%\plugins\imageformats\qsvgd.dll %projectdir%bin64_debug\imageformats\qsvgd.dll
 
 echo \bin64_debug\msvcp140d.dll
 copy /Y %vcredistdird%\msvcp140d.dll %projectdir%bin64_debug\msvcp140d.dll

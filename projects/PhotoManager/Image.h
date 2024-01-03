@@ -1,11 +1,17 @@
 #pragma once
 
 #include <QImage>
+#include <qimageiohandler.h>
 #include "MetadataCollection.h"
 
 class Image
 {
 public:
+	enum class Type
+	{
+		Bitmap, Vector, Movie
+	};
+
 	Image();
 	~Image();
 
@@ -20,12 +26,17 @@ public:
 	const QString& absoluteFilePath() const { return imageFilePath; }
 	const QString& fileName() const { return imageFileName; }
 	const MetadataCollection& metadata() const { return imageMetadata; }
+	Type type() const { return imageType; }
+
+private:
+	QImageIOHandler::Transformations loadImageFromFile(const QString& fileName, const QString& fileExtension);
 
 private:
 	QImage imageData;
 	QString imageFilePath;
 	QString imageFileName;
 	MetadataCollection imageMetadata;
+	Type imageType = Type::Bitmap;
 };
 
 Q_DECLARE_METATYPE(Image);

@@ -2,6 +2,7 @@
 #include <QImageReader>
 #include <QFileInfo>
 #include <QElapsedTimer>
+#include <QIcon>
 #include <QDebug>
 #include "MetadataReader.h"
 
@@ -20,9 +21,7 @@ void Image::load(const QString& fileName)
 	imageFilePath = fileInfo.absoluteFilePath();
 	imageFileName = fileInfo.fileName();
 
-	QImageReader imageReader(imageFilePath);
-	imageReader.setAutoTransform(true);
-	imageData = imageReader.read().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+	QImageIOHandler::Transformations t = loadImageFromFile(imageFilePath, fileInfo.suffix().toLower());
 
 	qint64 imageElapsed = timer.restart();
 
@@ -31,7 +30,6 @@ void Image::load(const QString& fileName)
 
 	qint64 metadataElapsed = timer.restart();
 
-	QImageIOHandler::Transformations t = imageReader.transformation();
 	qDebug() << "Loaded in:" << imageElapsed + metadataElapsed << "ms, cost:" << cacheSize() << "MB, transformations:" << t << ", metadata:" << metadataElapsed << "ms";
 }
 
@@ -54,4 +52,31 @@ void Image::rotate(double angle)
 		imageData = imageData.transformed(transform, Qt::FastTransformation);
 	else
 		imageData = imageData.transformed(transform, Qt::SmoothTransformation);
+}
+
+QImageIOHandler::Transformations Image::loadImageFromFile(const QString& fileName, const QString& fileExtension)
+{
+	imageType = Type::Bitmap;
+
+	if (fileExtension == "ico") {
+		QIcon icon(fileName);
+		if (!icon.isNull()) {
+			imageData = icon.pixmap(4096).toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+			return QImageIOHandler::TransformationNone;
+		}
+	}
+	else if (fileExtension == "svg") {
+		imageType = Type::Vector;
+	}
+	else if (fileExtension == "gif" || fileExtension == "webp") {
+		imageType = Type::Movie;
+	}
+
+	// Format Compatibility Notes
+	// TGA - Must be without RLE compression and origin must be TopLeft
+
+	QImageReader imageReader(imageFilePath);
+	imageReader.setAutoTransform(true);
+	imageData = imageReader.read().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+	return imageReader.transformation();
 }

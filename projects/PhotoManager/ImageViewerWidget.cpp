@@ -2,6 +2,8 @@
 #include <QImageReader>
 #include <QImage>
 #include <QPainter>
+#include <QSvgRenderer>
+#include <QMovie>
 #include <QElapsedTimer>
 #include <QWheelEvent>
 #include <QDebug>
@@ -19,6 +21,7 @@ ImageViewerWidget::ImageViewerWidget(QWidget* parent)
 
 ImageViewerWidget::~ImageViewerWidget()
 {
+	invalidateCache();
 }
 
 void ImageViewerWidget::setImage(const Image& image)
@@ -27,6 +30,22 @@ void ImageViewerWidget::setImage(const Image& image)
 	baseImage = image;
 	imageRotation = 0;
 	imageOffset = QPoint(0, 0);
+
+	if (baseImage.type() == Image::Type::Vector) {
+		// Create renderer when first used
+		if (svgRenderer == nullptr) {
+			svgRenderer = new QSvgRenderer(baseImage.absoluteFilePath());
+			svgScaleX = svgRenderer->viewBoxF().width() / svgRenderer->defaultSize().width();
+			svgScaleY = svgRenderer->viewBoxF().height() / svgRenderer->defaultSize().height();
+		}
+	} else if (baseImage.type() == Image::Type::Movie) {
+		if (animationPlayer == nullptr) {
+			animationPlayer = new QMovie(baseImage.absoluteFilePath());
+			animationPlayer->setCacheMode(QMovie::CacheAll);
+			connect(animationPlayer, &QMovie::frameChanged, this, &ImageViewerWidget::movieFrameChanged);
+			animationPlayer->start();
+		}
+	}
 
 	QSize viewportSize(this->size());
 	if (image.size().width() <= viewportSize.width() && image.size().height() <= viewportSize.height())
@@ -53,7 +72,7 @@ void ImageViewerWidget::zoom(ZoomOperation zoomOperation)
 	double scaleFit = qMin(scale1, scale2);
 
 	QVector<double> zoomValues;
-	zoomValues << 0.015625 << 0.03125 << 0.0625 << 0.125 << 0.25 << 0.5 << 1 << 2 << 4 << 8 << 16;
+	zoomValues << 0.015 << 0.03 << 0.06 << 0.125 << 0.25 << 0.5 << 0.75 << 1 << 1.5 << 2 << 3 << 4 << 5.5 << 8 << 11 << 16;
 
 	bool containsCurrent = false;
 	bool containsScaleFit = false;
@@ -151,6 +170,15 @@ void ImageViewerWidget::paintEvent(QPaintEvent* event)
 		painter.fillRect(QRect(QPoint(0, 0), viewportSize), QColor("#0a0a0a"));
 	else
 		painter.fillRect(QRect(QPoint(0, 0), viewportSize), QColor("#1e1e1e"));
+
+	if (baseImage.image().isNull()) {
+		painter.setFont(QFont("Segoe UI", 20));
+		painter.setPen(QColor("#aaa"));
+		if (baseImage.fileName().isEmpty())
+			painter.drawText(QRect(QPoint(0, 0), viewportSize), "Loading...", QTextOption(Qt::AlignCenter));
+		else
+			painter.drawText(QRect(QPoint(0, 0), viewportSize), "Unsupported image data format", QTextOption(Qt::AlignCenter));
+	}
 
 	painter.drawImage(centeredRect, preparedImage.image);
 
@@ -251,8 +279,8 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 		const MetadataItem& item = items.at(i);
 		maxWidth = qMax(maxWidth, xOffset + smallMetrics.width(item.stringValue) + backgroundBuffer);
 	}
-	maxWidth = qMax(maxWidth, xOffset + largeMetrics.width(image.fileName()) + backgroundBuffer);
-	painter->fillRect(QRect(0, 0, maxWidth, viewportSize.height()), QColor::fromRgb(30, 30, 30, 180));
+	maxWidth = qMax(maxWidth, xOffset + smallMetrics.width(image.fileName()) + backgroundBuffer);
+	painter->fillRect(QRect(0, 0, maxWidth, viewportSize.height()), QColor::fromRgb(30, 30, 30, 210));
 
 	// File index
 	yOffset += largeLineHeight;
@@ -260,11 +288,17 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	painter->setPen(QColor(Qt::white));
 	painter->drawText(xOffset, yOffset, QString("%1 / %2").arg(currentImageNumber).arg(currentImageCount));
 
-	yOffset += 3;
+	yOffset += separator;
+
+	// Label 'File Name'
+	yOffset += smallLineHeight;
+	painter->setFont(smallFont);
+	painter->setPen(QColor(Qt::gray));
+	painter->drawText(xOffset, yOffset, "File Name");
 
 	// File name
-	yOffset += largeLineHeight;
-	painter->setFont(largeFont);
+	yOffset += smallLineHeight;
+	painter->setFont(smallFont);
 	painter->setPen(QColor(Qt::white));
 	painter->drawText(xOffset, yOffset, image.fileName());
 
@@ -275,7 +309,6 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	painter->setFont(smallFont);
 	painter->setPen(QColor(Qt::gray));
 	painter->drawText(xOffset, yOffset, "Markers");
-
 
 	// Render markers
 	yOffset += markerLineHeight;
@@ -370,14 +403,35 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	else
 		painter->drawText(xOffset, yOffset, QString("%1 x %2").arg(image.size().width()).arg(image.size().height()));
 
-	// No EXIF warning
+	// Current image scale
+	yOffset += smallLineHeight;
+	painter->drawText(xOffset, yOffset, QString("%1 %").arg(imageZoomLevel * 100.0));
+
+	// Animation info
+	if (animationPlayer != nullptr) {
+		yOffset += separator;
+
+		// Label 'Frames'
+		yOffset += smallLineHeight;
+		painter->setFont(smallFont);
+		painter->setPen(QColor(Qt::gray));
+		painter->drawText(xOffset, yOffset, "Frame Count");
+
+		// Animation frame count
+		yOffset += smallLineHeight;
+		painter->setFont(smallFont);
+		painter->setPen(QColor(Qt::white));
+		painter->drawText(xOffset, yOffset, QString::number(animationPlayer->frameCount()));
+	}
+
+	// No metadata warning
 	if (items.isEmpty()) {
 		yOffset += smallLineHeight + separator;
-		painter->drawText(xOffset, yOffset, "No EXIF Data");
+		painter->drawText(xOffset, yOffset, "No Metadata");
 		return;
 	}
 
-	// EXIF
+	// Print embedded image metadata
 	for (int i = 0; i < items.count(); i++) {
 		const MetadataItem& item = items.at(i);
 		// Label
@@ -425,6 +479,12 @@ void ImageViewerWidget::recalculateCachedPixmap()
 	QElapsedTimer timer;
 	timer.start();
 
+	QImage baseImageData;
+	if (baseImage.type() == Image::Type::Movie)
+		baseImageData = animationPlayer->currentImage();
+	else
+		baseImageData = baseImage.image();
+
 	double scale = imageZoomLevel;
 
 	Qt::TransformationMode mode = Qt::SmoothTransformation;
@@ -435,7 +495,7 @@ void ImageViewerWidget::recalculateCachedPixmap()
 	QSize viewportSize(this->size());
 
 	// Original image size (5472 x 3648)
-	QSize imageSize(baseImage.size());
+	QSize imageSize(baseImageData.size());
 
 	// Size of full image when scaled
 	QSize scaledSize(imageSize * scale);
@@ -491,16 +551,36 @@ void ImageViewerWidget::recalculateCachedPixmap()
 
 	//preparedImage.renderingOffset = renderingOffset;
 
-	if (preparedImage.image.size() != targetSize || preparedImage.sourceRect != limitedSourceAreaRect) {
-		QImage clipped = baseImage.image().copy(limitedSourceAreaRect);
+	// Test if prepared image data needs to be recalculated
+	bool refreshNeededAnimation = (baseImage.type() == Image::Type::Movie && animationPlayerPreparedFrame != animationPlayer->currentFrameNumber());
+	bool refreshNeededSize = (preparedImage.image.size() != targetSize || preparedImage.sourceRect != limitedSourceAreaRect);
+	if (!refreshNeededAnimation && !refreshNeededSize) {
+		//qDebug() << "Rendering skipped";
+		return;
+	}
+
+	if (baseImage.type() == Image::Type::Vector) {
+		// Alocate image for painting
+		if (preparedImage.image.size() != targetSize)
+			preparedImage.image = QImage(targetSize, QImage::Format_ARGB32_Premultiplied);
+		preparedImage.image.fill(QColor("#fff"));
+		QPainter p(&preparedImage.image);
+
+		svgRenderer->setViewBox(QRectF(limitedSourceAreaRect.x() * svgScaleX, limitedSourceAreaRect.y() * svgScaleY, limitedSourceAreaRect.width() * svgScaleX, limitedSourceAreaRect.height() * svgScaleY));
+		svgRenderer->setAspectRatioMode(Qt::KeepAspectRatio);
+		svgRenderer->render(&p, QRectF(0, 0, targetSize.width(), targetSize.height()));
+
+		//qDebug() << "SVG rendered in:" << timer.elapsed() << "ms";
+	}
+	else {
+		QImage clipped = baseImageData.copy(limitedSourceAreaRect);
 
 		int prescaling = 1;
 		if (optimize && mode == Qt::SmoothTransformation) {
 			if (clipped.size().width() >= 8 * targetSize.width() && clipped.size().height() >= 8 * targetSize.height()) {
 				clipped = clipped.scaled(clipped.size() / 4);
 				prescaling = 4;
-			}
-			else if (clipped.size().width() >= 4 * targetSize.width() && clipped.size().height() >= 4 * targetSize.height()) {
+			} else if (clipped.size().width() >= 4 * targetSize.width() && clipped.size().height() >= 4 * targetSize.height()) {
 				clipped = clipped.scaled(clipped.size() / 2);
 				prescaling = 2;
 			}
@@ -510,9 +590,7 @@ void ImageViewerWidget::recalculateCachedPixmap()
 		//preparedImage.image = originalImage.copy(limitedSourceAreaRect).scaled(targetSize, Qt::KeepAspectRatio, mode);
 		preparedImage.sourceRect = limitedSourceAreaRect;
 
-		qDebug() << "Scaled in:" << timer.elapsed() << "Prescaling:" << prescaling;
-	} else {
-		qDebug() << "Scaling skipped.";
+		//qDebug().nospace() << "Scaled in: " << timer.elapsed() << " ms, Prescaling: " << prescaling << "x";
 	}
 }
 
@@ -520,6 +598,14 @@ void ImageViewerWidget::invalidateCache()
 {
 	preparedImage.image = QImage();
 	preparedImage.sourceRect = QRect();
+	if (svgRenderer != nullptr) {
+		delete svgRenderer;
+		svgRenderer = nullptr;
+	}
+	if (animationPlayer != nullptr) {
+		delete animationPlayer;
+		animationPlayer = nullptr;
+	}
 }
 
 int ImageViewerWidget::findClosestValueIndex(const QVector<double>& values, double x)
@@ -534,4 +620,10 @@ int ImageViewerWidget::findClosestValueIndex(const QVector<double>& values, doub
 		}
 	}
 	return minDistanceIndex;
+}
+
+void ImageViewerWidget::movieFrameChanged(int frameNumber)
+{
+	recalculateCachedPixmap();
+	update();
 }
