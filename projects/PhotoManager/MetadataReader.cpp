@@ -25,6 +25,11 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 		return MetadataCollection();
 	QString nativePath = QDir::toNativeSeparators(fileInfo.absoluteFilePath());
 
+	// Catch unsupported file extensions
+	QString ext = fileInfo.suffix().toLower();
+	if (ext == "ico" || ext == "svg" || ext == "tga")
+		return MetadataCollection();
+
 	MetadataCollection items;
 
 	try {
@@ -33,16 +38,14 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 			return MetadataCollection();
 
 		image->readMetadata();
-		Exiv2::ExifData& exifData = image->exifData();
-		if (exifData.empty())
-			return MetadataCollection();
 
-		Exiv2::ExifData::const_iterator end = exifData.end();
-		for (Exiv2::ExifData::const_iterator i = exifData.begin(); i != end; ++i) {
+		Exiv2::ExifData& exifData = image->exifData();
+		Exiv2::ExifData::const_iterator exifEnd = exifData.end();
+		for (Exiv2::ExifData::const_iterator i = exifData.begin(); i != exifEnd; ++i) {
 			const char* tn = i->typeName();
 			QByteArray key = QByteArray::fromStdString(i->key());
 			QByteArray val = QByteArray::fromStdString(i->toString());
-			qDebug() << key << i->tag() << (tn ? tn : "Unknown") << i->count() << val;
+			//qDebug() << key << i->tag() << (tn ? tn : "Unknown") << i->count() << val;
 
 			if (key == "Exif.Image.Make") {
 				MetadataItem item("Make", key);
@@ -167,11 +170,66 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 				}
 			}
 		}
+		const int metadataExifCount = items.count();
+
+		Exiv2::XmpData& xmpData = image->xmpData();
+		Exiv2::XmpData::const_iterator xmpEnd = xmpData.end();
+		for (Exiv2::XmpData::const_iterator i = xmpData.begin(); i != xmpEnd; ++i) {
+			const char *tn = i->typeName();
+			QByteArray key = QByteArray::fromStdString(i->key());
+			QByteArray val = QByteArray::fromStdString(i->toString());
+			qDebug() << key << i->tag() << (tn ? tn : "Unknown") << i->count() << val;
+
+			if (key == "Xmp.dc.creator") {
+				MetadataItem item("Xmp.dc.creator", key);
+				item.stringValue = QString::fromStdString(i->toString());
+				items.append(item);
+			}
+			else if (key == "Xmp.xmp.CreatorTool") {
+				MetadataItem item("Xmp.CreatorTool", key);
+				item.stringValue = QString::fromStdString(i->toString());
+				items.append(item);
+			}
+		}
+		const int metadataXmpCount = items.count() - metadataExifCount;
+
+		Exiv2::IptcData& iptcData = image->iptcData();
+		Exiv2::IptcData::const_iterator iptcEnd = iptcData.end();
+		for (Exiv2::IptcData::const_iterator i = iptcData.begin(); i != iptcEnd; ++i) {
+			const char* tn = i->typeName();
+			QByteArray key = QByteArray::fromStdString(i->key());
+			QByteArray val = QByteArray::fromStdString(i->toString());
+			qDebug() << key << i->tag() << (tn ? tn : "Unknown") << i->count() << val;
+		}
+		const int metadataIptcCount = items.count() - (metadataExifCount + metadataXmpCount);
+
+		// Show additional metadata indicators
+		if (exifData.count() > 0 || xmpData.count() > 0 || iptcData.count() > 0) {
+			MetadataItem item("Other Metadata");
+			if (exifData.count() > 0) {
+				if (!item.stringValue.isEmpty())
+					item.stringValue.append(", ");
+				item.stringValue.append(QString("EXIF: %1").arg(exifData.count() - metadataExifCount));
+			}
+			if (xmpData.count() > 0) {
+				if (!item.stringValue.isEmpty())
+					item.stringValue.append(", ");
+				item.stringValue.append(QString("XMP: %1").arg(xmpData.count() - metadataXmpCount));
+			}
+			if (iptcData.count() > 0) {
+				if (!item.stringValue.isEmpty())
+					item.stringValue.append(", ");
+				item.stringValue.append(QString("IPTC: %1").arg(iptcData.count() - metadataIptcCount));
+			}
+			items.append(item);
+		}
 	}
 	catch (Exiv2::Error& e) {
+		qDebug().nospace() << "Exiv2::Error (" << e.code() << "): " << e.what();
 		return MetadataCollection();
 	}
 	catch (Exiv2::WError& e) {
+		qDebug().nospace() << "Exiv2::WError (" << e.code() << "): " << e.what();
 		return MetadataCollection();
 	}
 
