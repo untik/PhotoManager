@@ -7,7 +7,7 @@ struct MetadataItem
 	QString label;
 	QString stringValue;
 	QString unit;
-	int rawIntegerValue;
+	int rawIntegerValue = 0;
 	QByteArray exifKey;
 
 	MetadataItem() {}

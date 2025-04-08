@@ -18,7 +18,7 @@ PhotoManagerWindow::PhotoManagerWindow(const QStringList& files, QWidget* parent
 	ui.setupUi(this);
 
 	QVBoxLayout* layout = new QVBoxLayout();
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 
 	imageViewer = new ImageViewerWidget();
 	layout->addWidget(imageViewer);

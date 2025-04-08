@@ -24,12 +24,11 @@ public:
 		QString fullFilePath;
 		QString fileName;
 		QMap<char, bool> markers;
-		bool isPassingFilter;
-		int filteredIndex;
+		bool isPassingFilter = true;
+		int filteredIndex = 0;
 
+		Item() {}
 		bool isValid() const { return !fullFilePath.isEmpty(); }
-
-		Item() : isPassingFilter(true) {}
 	};
 
 	ImageFileList(QObject* parent = nullptr);

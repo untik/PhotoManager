@@ -55,7 +55,7 @@
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>UNICODE;WIN32;WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>UNICODE;WIN32;WIN64;QT_DISABLE_DEPRECATED_BEFORE=0x060000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(SolutionDir)vcpkg_installed\x64-windows-v142\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -141,6 +141,7 @@
     </QtUic>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\include\qtiff\qtiffhandler.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="ImageFileList.cpp" />
     <ClCompile Include="ImageProcessor.cpp" />
@@ -162,6 +163,7 @@
     </QtUic>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\qtiff\qtiffhandler.h" />
     <ClInclude Include="GeneratedFiles\ui_PhotoManagerWindow.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Settings.h" />

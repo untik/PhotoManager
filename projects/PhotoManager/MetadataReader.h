@@ -27,5 +27,5 @@ private:
 	static QString decodePanasonicSelfTimer(int code);
 	static QString decodePanasonicHdr(int code);
 	static QString decodePanasonicBracketSettings(int code);
+	static QString decodeImageCompression(int code);
 };
-

@@ -187,17 +187,33 @@ void ImageViewerWidget::paintEvent(QPaintEvent* event)
 
 	if (isMarked)
 		painter.fillRect(centeredRect, QBrush(QColor(0, 0, 0, 200), Qt::SolidPattern));
+
+	//QFont largeFont("Segoe UI", 14);
+	//QFontMetrics largeMetrics = QFontMetrics(largeFont);
+	//int largeLineHeight = largeMetrics.height();
+
+	//painter.fillRect(QRect(QPoint(0, 0), QSize(50, 1000)), QColor("#0a0a0a"));
+	//int buttonOffset = 2;
+	//for (int i = 0; i < 10; i++) {
+	//	painter.fillRect(QRect(QPoint(1, buttonOffset), QSize(48, 48)), QColor("#1e1e1e"));
+
+	//	if (i == 6) {
+	//		painter.fillRect(QRect(QPoint(1, buttonOffset), QSize(48, 48)), QColor("#5e5eAe"));
+	//		painter.fillRect(QRect(50, buttonOffset, 200, 48), QColor::fromRgb(30, 30, 30, 180));
+	//		painter.setFont(largeFont);
+	//		painter.setPen(QColor(Qt::white));
+	//		painter.drawText(60, buttonOffset + 30, QString("Button %1 / %2").arg(i).arg(10));
+	//	}
+
+	//	buttonOffset += 50;
+	//}
 }
 
 void ImageViewerWidget::wheelEvent(QWheelEvent* event)
 {
-	if (event->orientation() != Qt::Vertical)
-		return;
-
-	double zoomLevel;
 	if (event->angleDelta().y() > 0)
 		zoom(ZoomIn);
-	else
+	else if (event->angleDelta().y() < 0)
 		zoom(ZoomOut);
 }
 
@@ -277,9 +293,9 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	int backgroundBuffer = 10;
 	for (int i = 0; i < items.count(); i++) {
 		const MetadataItem& item = items.at(i);
-		maxWidth = qMax(maxWidth, xOffset + smallMetrics.width(item.stringValue) + backgroundBuffer);
+		maxWidth = qMax(maxWidth, xOffset + smallMetrics.horizontalAdvance(item.stringValue) + backgroundBuffer);
 	}
-	maxWidth = qMax(maxWidth, xOffset + smallMetrics.width(image.fileName()) + backgroundBuffer);
+	maxWidth = qMax(maxWidth, xOffset + smallMetrics.horizontalAdvance(image.fileName()) + backgroundBuffer);
 	painter->fillRect(QRect(0, 0, maxWidth, viewportSize.height()), QColor::fromRgb(30, 30, 30, 210));
 
 	// File index

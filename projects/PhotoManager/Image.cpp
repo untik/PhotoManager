@@ -35,7 +35,7 @@ void Image::load(const QString& fileName)
 
 int Image::cacheSize() const
 {
-	return qMax(1, static_cast<int>((double)imageData.byteCount() / (1024 * 1024) + 0.5));
+	return qMax(1, static_cast<int>((double)imageData.sizeInBytes() / (1024 * 1024) + 0.5));
 }
 
 QSize Image::size() const

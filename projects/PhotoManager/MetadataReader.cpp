@@ -29,7 +29,15 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 	MetadataCollection items;
 
 	try {
-		Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(nativePath.toStdString());
+		//QFile imageFile(nativePath);
+		//if (!imageFile.open(QFile::ReadOnly))
+		//	return MetadataCollection();
+
+		//QByteArray imagFileData = imageFile.readAll();
+		//Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(reinterpret_cast<const uint8_t*>(imagFileData.constData()), imagFileData.size());
+
+
+		Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(nativePath.toStdString(), false);
 		if (image.get() == 0)
 			return MetadataCollection();
 
@@ -41,7 +49,7 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 			const char* tn = i->typeName();
 			QByteArray key = QByteArray::fromStdString(i->key());
 			QByteArray val = QByteArray::fromStdString(i->toString());
-			//qDebug() << key << i->tag() << (tn ? tn : "Unknown") << i->count() << val;
+			qDebug() << key << i->tag() << (tn ? tn : "Unknown") << i->count() << val;
 
 			if (key == "Exif.Image.Make") {
 				MetadataItem item("Make", key);
@@ -61,6 +69,11 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 			else if (key == "Exif.Image.Artist") {
 				MetadataItem item("Artist", key);
 				item.stringValue = QString::fromStdString(i->toString());
+				items.append(item);
+			}
+			else if (key == "Exif.Image.Compression") {
+				MetadataItem item("Compression", key);
+				item.stringValue = decodeImageCompression(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Photo.DateTimeOriginal") {
@@ -224,6 +237,10 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 		qDebug().nospace() << "Exiv2::Error (" << static_cast<int>(e.code()) << "): " << e.what();
 		return MetadataCollection();
 	}
+	//catch (Exiv2::WError& e) {
+	//	qDebug().nospace() << "Exiv2::WError (" << static_cast<int>(e.code()) << "): " << e.what();
+	//	return MetadataCollection();
+	//}
 
 	// Postprocessing for combined values
 	MetadataItem* panasonicShootingMode = items.findKey("Exif.Panasonic.ShootingMode");
@@ -536,6 +553,65 @@ QString MetadataReader::decodePanasonicBracketSettings(int code)
 		case 4: return QString("5 Images (-/0/+)");
 		case 5: return QString("7 Images (0/-/+)");
 		case 6: return QString("7 Images (-/0/+)");
+	}
+	return QString("Unknown (%1)").arg(code);
+}
+
+QString MetadataReader::decodeImageCompression(int code)
+{
+	switch (code) {
+		case 1: return QString("Uncompressed");
+		case 2: return QString("CCITT 1D");
+		case 3: return QString("T4/Group 3 Fax");
+		case 4: return QString("T6/Group 4 Fax");
+		case 5: return QString("LZW");
+		case 6: return QString("JPEG (old-style)");
+		case 7: return QString("JPEG");
+		case 8: return QString("Adobe Deflate");
+		case 9: return QString("JBIG B&W");
+		case 10: return QString("JBIG Color");
+		case 99: return QString("JPEG");
+		case 32766: return QString("Next");
+		case 32767: return QString("Sony ARW Compressed");
+		case 32769: return QString("Packed RAW");
+		case 32770: return QString("Samsung SRW Compressed");
+		case 32771: return QString("CCIRLEW");
+		case 32772: return QString("Samsung SRW Compressed 2");
+		case 32773: return QString("PackBits");
+		case 32809: return QString("Thunderscan");
+		case 32867: return QString("Kodak KDC Compressed");
+		case 32895: return QString("IT8CTPAD");
+		case 32896: return QString("IT8LW");
+		case 32897: return QString("IT8MP");
+		case 32898: return QString("IT8BL");
+		case 32908: return QString("PixarFilm");
+		case 32909: return QString("PixarLog");
+		case 32946: return QString("Deflate");
+		case 32947: return QString("DCS");
+		case 33003: return QString("Aperio JPEG 2000 YCbCr");
+		case 33005: return QString("Aperio JPEG 2000 RGB");
+		case 34661: return QString("JBIG");
+		case 34676: return QString("SGILog");
+		case 34677: return QString("SGILog24");
+		case 34712: return QString("JPEG 2000");
+		case 34713: return QString("Nikon NEF Compressed");
+		case 34715: return QString("JBIG2 TIFF FX");
+		case 34718: return QString("Microsoft Document Imaging (MDI) Binary Level Codec");
+		case 34719: return QString("Microsoft Document Imaging (MDI) Progressive Transform Codec");
+		case 34720: return QString("Microsoft Document Imaging (MDI) Vector");
+		case 34887: return QString("ESRI Lerc");
+		case 34892: return QString("Lossy JPEG");
+		case 34925: return QString("LZMA2");
+		case 34926: return QString("Zstd (old)");
+		case 34927: return QString("WebP (old)");
+		case 34933: return QString("PNG");
+		case 34934: return QString("JPEG XR");
+		case 50000: return QString("Zstd");
+		case 50001: return QString("WebP");
+		case 50002: return QString("JPEG XL (old)");
+		case 52546: return QString("JPEG XL");
+		case 65000: return QString("Kodak DCR Compressed");
+		case 65535: return QString("Pentax PEF Compressed");
 	}
 	return QString("Unknown (%1)").arg(code);
 }
