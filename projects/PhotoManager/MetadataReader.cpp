@@ -4,12 +4,8 @@
 #include <QDebug>
 
 #include "exiv2\exiv2.hpp"
+#pragma comment(lib, "exiv2.lib")
 
-#ifdef _DEBUG
-#pragma comment(lib, "..\\lib64_debug\\libexiv2.lib")
-#else
-#pragma comment(lib, "..\\lib64\\libexiv2.lib")
-#endif
 
 MetadataReader::MetadataReader()
 {}
@@ -33,7 +29,7 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 	MetadataCollection items;
 
 	try {
-		Exiv2::Image::AutoPtr image = Exiv2::ImageFactory::open(nativePath.toStdWString());
+		Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(nativePath.toStdString());
 		if (image.get() == 0)
 			return MetadataCollection();
 
@@ -92,80 +88,80 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 			}
 			else if (key == "Exif.Photo.ExposureProgram") {
 				MetadataItem item("Program", key);
-				item.stringValue = decodeExposureProgram(i->toLong());
+				item.stringValue = decodeExposureProgram(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Photo.MeteringMode") {
 				MetadataItem item("Metering Mode", key);
-				item.stringValue = decodeMeteringMode(i->toLong());
+				item.stringValue = decodeMeteringMode(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Photo.Flash") {
 				MetadataItem item("Flash", key);
-				item.stringValue = decodeFlash(i->toLong());
+				item.stringValue = decodeFlash(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Photo.ExposureMode") {
 				MetadataItem item("Exposure Mode", key);
-				item.stringValue = decodeExposureMode(i->toLong());
+				item.stringValue = decodeExposureMode(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Photo.WhiteBalance") {
 				MetadataItem item("White Balance", key);
-				item.stringValue = decodeWhiteBalance(i->toLong());
+				item.stringValue = decodeWhiteBalance(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Photo.FocalLengthIn35mmFilm") {
 				MetadataItem item("Focal Length (35mm)", key);
-				item.stringValue = QString("%1 mm").arg(i->toLong());
+				item.stringValue = QString("%1 mm").arg(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Panasonic.ColorTempKelvin") {
 				MetadataItem item("Color Temperature", key);
-				item.stringValue = QString("%1 K").arg(i->toLong());
+				item.stringValue = QString("%1 K").arg(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Panasonic.ShootingMode") {
 				MetadataItem item("Shooting Mode", key);
-				item.rawIntegerValue = i->toLong();
-				item.stringValue = decodePanasonicShootingMode(i->toLong());
+				item.rawIntegerValue = i->toUint32();
+				item.stringValue = decodePanasonicShootingMode(i->toUint32());
 				items.append(item);
 			}
 			else if (key == "Exif.Panasonic.AdvancedSceneType") {
 				MetadataItem item("Advanced Scene Type", key);
-				item.rawIntegerValue = i->toLong();
+				item.rawIntegerValue = i->toUint32();
 				item.stringValue = QString::fromStdString(i->toString());
 				items.append(item);
 			}
 			else if (key == "Exif.Panasonic.BurstMode") {
 				MetadataItem item("Burst Mode", key);
-				item.rawIntegerValue = i->toLong();
+				item.rawIntegerValue = i->toUint32();
 				if (item.rawIntegerValue > 0) {
-					item.stringValue = decodePanasonicBurstMode(i->toLong());
+					item.stringValue = decodePanasonicBurstMode(i->toUint32());
 					items.append(item);
 				}
 			}
 			else if (key == "Exif.Panasonic.SelfTimer") {
 				MetadataItem item("Self Timer", key);
-				item.rawIntegerValue = i->toLong();
+				item.rawIntegerValue = i->toUint32();
 				if (item.rawIntegerValue > 1) {
-					item.stringValue = decodePanasonicSelfTimer(i->toLong());
+					item.stringValue = decodePanasonicSelfTimer(i->toUint32());
 					items.append(item);
 				}
 			}
 			else if (key == "Exif.Panasonic.HDR") {
 				MetadataItem item("HDR", key);
-				item.rawIntegerValue = i->toLong();
+				item.rawIntegerValue = i->toUint32();
 				if (item.rawIntegerValue > 0) {
-					item.stringValue = decodePanasonicHdr(i->toLong());
+					item.stringValue = decodePanasonicHdr(i->toUint32());
 					items.append(item);
 				}
 			}
 			else if (key == "Exif.Panasonic.BracketSettings") {
 				MetadataItem item("Bracket Settings", key);
-				item.rawIntegerValue = i->toLong();
+				item.rawIntegerValue = i->toUint32();
 				if (item.rawIntegerValue > 0) {
-					item.stringValue = decodePanasonicBracketSettings(i->toLong());
+					item.stringValue = decodePanasonicBracketSettings(i->toUint32());
 					items.append(item);
 				}
 			}
@@ -225,11 +221,7 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 		}
 	}
 	catch (Exiv2::Error& e) {
-		qDebug().nospace() << "Exiv2::Error (" << e.code() << "): " << e.what();
-		return MetadataCollection();
-	}
-	catch (Exiv2::WError& e) {
-		qDebug().nospace() << "Exiv2::WError (" << e.code() << "): " << e.what();
+		qDebug().nospace() << "Exiv2::Error (" << static_cast<int>(e.code()) << "): " << e.what();
 		return MetadataCollection();
 	}
 

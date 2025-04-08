@@ -1,0 +1,11 @@
+
+In developer command prompt for VS2022 run:
+In project root
+
+VS2019
+vcpkg install --overlay-triplets=vcpkg/triplets --triplet=x64-windows-v142
+
+VS2022
+vcpkg install --overlay-triplets=vcpkg/triplets --triplet=x64-windows-v143
+
+run update-lib.bat

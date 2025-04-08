@@ -7,3 +7,9 @@
 [submodule "modules/zlib"]
 	path = modules/zlib
 	url = https://github.com/madler/zlib.git
+[submodule "modules/libtiff"]
+	path = modules/libtiff
+	url = https://gitlab.com/libtiff/libtiff.git
+[submodule "modules/libjpeg-turbo"]
+	path = modules/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
