@@ -6,6 +6,8 @@
 #include <QMovie>
 #include <QElapsedTimer>
 #include <QWheelEvent>
+#include <QTextDocument>
+#include <QAbstractTextDocumentLayout>
 #include <QDebug>
 
 ImageViewerWidget::ImageViewerWidget(QWidget* parent)
@@ -148,6 +150,18 @@ void ImageViewerWidget::toggleImageInitialZoomLock()
 	imageInitialZoomLocked = !imageInitialZoomLocked;
 }
 
+void ImageViewerWidget::toggleShowHelpText()
+{
+	showHelpText = !showHelpText;
+	update();
+}
+
+void ImageViewerWidget::toggleShowDebugInfo()
+{
+	showDebugInfo = !showDebugInfo;
+	update();
+}
+
 void ImageViewerWidget::setMarkerState(const QMap<char, bool>& markerState)
 {
 	imageMarkerState = markerState;
@@ -216,25 +230,48 @@ void ImageViewerWidget::paintEvent(QPaintEvent* event)
 
 	painter.drawImage(centeredRect, preparedImage.image);
 
+	if (showHelpText) {
+		painter.fillRect(QRect(QPoint(0, 0), viewportSize), QColor::fromRgb(30, 30, 30, 210));
+		QTextDocument td;
+		td.setMarkdown(applicationHelpText);
+		td.setTextWidth(600);
+		td.setDefaultFont(QFont("Segoe UI", 12));
+		QAbstractTextDocumentLayout::PaintContext ctx;
+		ctx.palette.setColor(QPalette::Text, QColor("#ccc"));
+		painter.translate(50, 50);
+		td.documentLayout()->draw(&painter, ctx);
+		return;
+	}
+
 	if (showImageInformation && !isMarked)
 		renderDescription(&painter, baseImage, viewportSize);
 
 	if (isMarked)
 		painter.fillRect(centeredRect, QBrush(QColor(0, 0, 0, 200), Qt::SolidPattern));
 
-	// Print timing info
-	QString timeStr;
-	timeStr.append(QString::number(baseImage.elapsedTimeFileLoad()));
-	timeStr.append(" ms, ");
-	timeStr.append(QString::number(baseImage.elapsedTimeMetadata()));
-	timeStr.append(" ms, ");
-	timeStr.append(QString::number(baseImage.elapsedTimeBitmapFrames()));
-	timeStr.append(" ms, ");
-	timeStr.append(QString::number(imageTimeRecalculateCache));
-	timeStr.append(" ms, ");
-	timeStr.append(QString::number(baseImage.cacheSize()));
-	timeStr.append(" MB");
-	painter.drawText(QRect(QPoint(2, 70), viewportSize), timeStr);
+	if (showDebugInfo) {
+		// Print timing info
+		QString debugStr;
+		debugStr.append(QString::number(baseImage.elapsedTimeFileLoad()));
+		debugStr.append(" ms, ");
+		debugStr.append(QString::number(baseImage.elapsedTimeMetadata()));
+		debugStr.append(" ms, ");
+		debugStr.append(QString::number(baseImage.elapsedTimeBitmapFrames()));
+		debugStr.append(" ms, ");
+		debugStr.append(QString::number(imageTimeRecalculateCache));
+		debugStr.append(" ms, ");
+		debugStr.append(QString::number(baseImage.cacheSize()));
+		debugStr.append(" MB");
+
+		painter.setFont(QFont("Segoe UI", 12));
+		QRect stringBounds = painter.fontMetrics().boundingRect(debugStr);
+		QSize rectSize(stringBounds.width() + 10, stringBounds.height() + 10);
+		rectSize = rectSize.grownBy(QMargins(10, 5, 10, 5));
+		QRect debugInfoRect(QPoint(viewportSize.width() / 2 - rectSize.width() / 2, 0), rectSize);
+		painter.fillRect(debugInfoRect, QColor::fromRgb(30, 30, 30, 210));
+		painter.drawText(debugInfoRect, debugStr, QTextOption(Qt::AlignCenter));
+	}
+
 
 	//QFont largeFont("Segoe UI", 14);
 	//QFontMetrics largeMetrics = QFontMetrics(largeFont);

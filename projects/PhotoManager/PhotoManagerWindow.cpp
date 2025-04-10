@@ -60,6 +60,8 @@ PhotoManagerWindow::PhotoManagerWindow(const QStringList& files, QWidget* parent
 	if (settings.value("window.maximized").toBool())
 		windowStates = (windowStates | Qt::WindowMaximized);
 
+	imageViewer->setHelpText(createHelpText());
+
 	setWindowState(windowStates);
 	show();
 }
@@ -156,6 +158,12 @@ void PhotoManagerWindow::keyPressEvent(QKeyEvent* event)
 		case Qt::Key_Delete:
 			// Delete or trash current image
 			deleteCurrentImage(event->modifiers().testFlag(Qt::ShiftModifier));
+			break;
+		case Qt::Key_F1:
+			imageViewer->toggleShowHelpText();
+			break;
+		case Qt::Key_D:
+			imageViewer->toggleShowDebugInfo();
 			break;
 	}
 }
@@ -262,4 +270,52 @@ void PhotoManagerWindow::deleteCurrentImage(bool isShiftActive)
 			}
 		}
 	}
+}
+
+QString PhotoManagerWindow::createHelpText() const
+{
+	const char* helpText = R"(
+
+### PhotoManager Help
+
+__F1__ - Toggle help visibility
+
+__Escape__ - Close application
+
+__I__ - Toggle image info panel
+
+__F__ - Toggle fullscreen
+
+__Left / Right__ - Next / previous image
+
+__Shift + Left / Right__ - Next / previous image (skip 10)
+
+__Down / Up__ - Next / previous image page (pause animation)
+
+__Mouse Wheel__ - Zoom
+
+__Plus / Minus__ - Zoom
+
+__Space__ - Quick toggle zoom (100% / Fit to screen)
+
+__Comma / Period__ - Rotate left / right
+
+__X__ - Mark image to be deleted
+
+__1, 2, 3, 4, 5__ - Mark image with specific marker
+
+__Control + 1, 2, 3, 4, 5__ - Show only images marked with specific marker
+
+__0__ - Clear markers for current image
+
+__Delete__ - Move image to trash
+
+__Shift + Delete__ - Permanently delete the image
+
+__L__ - Toggle zoom lock when switching images
+
+__D__ - Toggle debug info panel
+
+	)";
+	return QString::fromUtf8(helpText);
 }

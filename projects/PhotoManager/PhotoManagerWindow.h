@@ -34,6 +34,7 @@ private:
 	void toggleMarker(MarkerType marker, bool singleMarker);
 	void exportCurrentImage();
 	void deleteCurrentImage(bool isShiftActive);
+	QString createHelpText() const;
 
 private:
 	Ui::PhotoManagerWindowClass ui;

@@ -35,6 +35,8 @@ public:
 
 	void toggleShowImageInformation();
 	void toggleImageInitialZoomLock();
+	void toggleShowHelpText();
+	void toggleShowDebugInfo();
 
 	void setMarkerState(const QMap<char, bool>& markerState);
 	void setMarkerState(char channel, bool isMarked);
@@ -45,6 +47,8 @@ public:
 
 	void nextFrame();
 	void previousFrame();
+
+	void setHelpText(const QString& text) { applicationHelpText = text; }
 
 protected:
 	void paintEvent(QPaintEvent* event) override;
@@ -96,6 +100,10 @@ private:
 	int currentImageCount;
 
 	bool imageInitialZoomLocked = false;
+	bool showHelpText = false;
+	QString applicationHelpText;
+
+	bool showDebugInfo = false;
 
 	qint64 imageTimeRecalculateCache = 0;
 };
