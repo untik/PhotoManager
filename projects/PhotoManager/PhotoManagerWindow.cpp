@@ -29,10 +29,15 @@ PhotoManagerWindow::PhotoManagerWindow(const QStringList& files, QWidget* parent
 	connect(imageProcessor, &ImageProcessor::imageLoaded, this, &PhotoManagerWindow::imageLoaded);
 
 	QString fileName;
-	if (!files.isEmpty())
+	if (!files.isEmpty()) {
 		fileName = files.first();
-	else
-		fileName = "../tools/P1080555.JPG";
+	} else {
+		QStringList testFiles = QDir("../test/").entryList(QDir::Filter::Files, QDir::SortFlag::Name);
+		if (!testFiles.isEmpty())
+			fileName = "../test/" + testFiles.at(0);
+	}
+	//fileName = "../test/PhotoManager_icon.tiff";
+
 	QFileInfo fileInfo(fileName);
 
 	fileList = new ImageFileList();
@@ -94,12 +99,21 @@ void PhotoManagerWindow::keyPressEvent(QKeyEvent* event)
 			else
 				nextFile();
 			break;
+		case Qt::Key_Up:
+			imageViewer->previousFrame();
+			break;
+		case Qt::Key_Down:
+			imageViewer->nextFrame();
+			break;
 		case Qt::Key_Escape:
 			this->close();
 			break;
 		case Qt::Key_O:
 			imageViewer->optimize = !imageViewer->optimize;
 			imageViewer->recalculate();
+			break;
+		case Qt::Key_L:
+			imageViewer->toggleImageInitialZoomLock();
 			break;
 		case Qt::Key_F:
 			setWindowState(windowState() ^ Qt::WindowFullScreen);

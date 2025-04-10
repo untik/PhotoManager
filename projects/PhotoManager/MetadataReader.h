@@ -11,7 +11,7 @@ public:
 	MetadataReader();
 	~MetadataReader();
 
-	static MetadataCollection load(const QString& fileName);
+	static MetadataCollection load(const QByteArray& fileData, const QString& fileType);
 
 private:
 	static QString decodeExposureProgram(int code);

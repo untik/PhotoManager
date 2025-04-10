@@ -13,31 +13,16 @@ MetadataReader::MetadataReader()
 MetadataReader::~MetadataReader()
 {}
 
-MetadataCollection MetadataReader::load(const QString& fileName)
+MetadataCollection MetadataReader::load(const QByteArray& fileData, const QString& fileType)
 {
-	// Prepare file path for libexiv2
-	QFileInfo fileInfo(fileName);
-	if (!fileInfo.exists())
-		return MetadataCollection();
-	QString nativePath = QDir::toNativeSeparators(fileInfo.absoluteFilePath());
-
 	// Catch unsupported file extensions
-	QString ext = fileInfo.suffix().toLower();
-	if (ext == "ico" || ext == "svg" || ext == "tga")
+	if (fileType == "ico" || fileType == "svg" || fileType == "tga")
 		return MetadataCollection();
 
 	MetadataCollection items;
 
 	try {
-		//QFile imageFile(nativePath);
-		//if (!imageFile.open(QFile::ReadOnly))
-		//	return MetadataCollection();
-
-		//QByteArray imagFileData = imageFile.readAll();
-		//Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(reinterpret_cast<const uint8_t*>(imagFileData.constData()), imagFileData.size());
-
-
-		Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(nativePath.toStdString(), false);
+		Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(reinterpret_cast<const uint8_t*>(fileData.constData()), fileData.size());
 		if (image.get() == 0)
 			return MetadataCollection();
 
@@ -237,10 +222,6 @@ MetadataCollection MetadataReader::load(const QString& fileName)
 		qDebug().nospace() << "Exiv2::Error (" << static_cast<int>(e.code()) << "): " << e.what();
 		return MetadataCollection();
 	}
-	//catch (Exiv2::WError& e) {
-	//	qDebug().nospace() << "Exiv2::WError (" << static_cast<int>(e.code()) << "): " << e.what();
-	//	return MetadataCollection();
-	//}
 
 	// Postprocessing for combined values
 	MetadataItem* panasonicShootingMode = items.findKey("Exif.Panasonic.ShootingMode");

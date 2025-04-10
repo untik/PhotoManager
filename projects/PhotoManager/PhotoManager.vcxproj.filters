@@ -24,6 +24,9 @@
       <Extensions>moc;h;cpp</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="Source Files\qtiff">
+      <UniqueIdentifier>{b83d6235-478c-442b-a5fe-d765955a563a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -58,6 +61,9 @@
     </ClCompile>
     <ClCompile Include="Settings.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\include\qtiff\qtiffhandler.cpp">
+      <Filter>Source Files\qtiff</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -108,8 +114,13 @@
     <ClInclude Include="Settings.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\qtiff\qtiffhandler.h">
+      <Filter>Source Files\qtiff</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="PhotoManager.rc" />
+    <ResourceCompile Include="PhotoManager.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

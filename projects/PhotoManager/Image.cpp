@@ -2,9 +2,13 @@
 #include <QImageReader>
 #include <QFileInfo>
 #include <QElapsedTimer>
+#include <QBuffer>
 #include <QIcon>
 #include <QDebug>
 #include "MetadataReader.h"
+#include "qtiff/qtiffhandler.h"
+
+extern void qt_imageTransform(QImage& src, QImageIOHandler::Transformations orient);
 
 Image::Image()
 {}
@@ -14,33 +18,56 @@ Image::~Image()
 
 void Image::load(const QString& fileName)
 {
+	imageCurrentFrameIndex = 0;
+	imageDataSize = 0;
+	imageFrameDataSize = 0;
+
+	loadImageData(fileName);
+
+	// Format Compatibility Notes
+	// TGA - Must be without RLE compression and origin must be TopLeft
+	// TIFF - Qt doesn't handle jpeg compression, use libtiff directly
+
+	// TODO - PNG keys
+	// QStringList QImageReader::textKeys() const
+	// QString QImageReader::text(const QString &key) const
+
 	QElapsedTimer timer;
 	timer.start();
 
-	QFileInfo fileInfo(fileName);
-	imageFilePath = fileInfo.absoluteFilePath();
-	imageFileName = fileInfo.fileName();
+	QBuffer buffer(&imageFileData);
+	buffer.open(QIODevice::ReadOnly);
 
-	QImageIOHandler::Transformations t = loadImageFromFile(imageFilePath, fileInfo.suffix().toLower());
+	if (imageFileType == "tif" || imageFileType == "tiff") {
+		readAllFrameDataTiff(&buffer);
+	} else {
+		readAllFrameDataReader(&buffer);
+	}
 
-	qint64 imageElapsed = timer.restart();
+	buffer.close();
+	imageFileData.clear();
+	imageDataSize = 0;
 
-	MetadataReader metadataReader;
-	imageMetadata = metadataReader.load(imageFilePath);
+	imageTimeBitmapFrames = timer.restart();
+	qDebug() << "Loaded in:" << imageTimeBitmapFrames << "ms, cost:" << imageFrameDataSize << "MB";
 
-	qint64 metadataElapsed = timer.restart();
+	if (imageFrames.isEmpty())
+		return;
 
-	qDebug() << "Loaded in:" << imageElapsed + metadataElapsed << "ms, cost:" << cacheSize() << "MB, transformations:" << t << ", metadata:" << metadataElapsed << "ms";
+	currentImage = imageFrames.at(0).image;
+
+	if (imageFileType == "svg") {
+		imageType = Type::Vector;
+	} else if (imageFrames.count() > 1) {
+		imageType = Type::Movie;
+	} else {
+		imageType = Type::Bitmap;
+	}
 }
 
 int Image::cacheSize() const
 {
-	return qMax(1, static_cast<int>((double)imageData.sizeInBytes() / (1024 * 1024) + 0.5));
-}
-
-QSize Image::size() const
-{
-	return imageData.size();
+	return qMax(1, imageDataSize + imageFrameDataSize);
 }
 
 void Image::rotate(double angle)
@@ -49,34 +76,121 @@ void Image::rotate(double angle)
 	transform.rotate(angle);
 
 	if (angle == 0 || angle == 90 || angle == 180 || angle == 270)
-		imageData = imageData.transformed(transform, Qt::FastTransformation);
+		currentImage = currentImage.transformed(transform, Qt::FastTransformation);
 	else
-		imageData = imageData.transformed(transform, Qt::SmoothTransformation);
+		currentImage = currentImage.transformed(transform, Qt::SmoothTransformation);
 }
 
-QImageIOHandler::Transformations Image::loadImageFromFile(const QString& fileName, const QString& fileExtension)
+int Image::currentFrameDelay()
 {
-	imageType = Type::Bitmap;
+	if (imageFrames.isEmpty())
+		return 0;
+	return imageFrames.at(imageCurrentFrameIndex).delay;
+}
 
-	if (fileExtension == "ico") {
-		QIcon icon(fileName);
-		if (!icon.isNull()) {
-			imageData = icon.pixmap(4096).toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied);
-			return QImageIOHandler::TransformationNone;
-		}
-	}
-	else if (fileExtension == "svg") {
-		imageType = Type::Vector;
-	}
-	else if (fileExtension == "gif" || fileExtension == "webp") {
-		imageType = Type::Movie;
-	}
+void Image::jumpToNextImage()
+{
+	if (imageFrames.isEmpty())
+		return;
 
-	// Format Compatibility Notes
-	// TGA - Must be without RLE compression and origin must be TopLeft
+	imageCurrentFrameIndex++;
+	if (imageCurrentFrameIndex >= imageFrames.count())
+		imageCurrentFrameIndex = 0;
 
+	currentImage = imageFrames.at(imageCurrentFrameIndex).image;
+}
+
+void Image::jumpToPreviousImage()
+{
+	if (imageFrames.isEmpty())
+		return;
+
+	imageCurrentFrameIndex--;
+	if (imageCurrentFrameIndex < 0)
+		imageCurrentFrameIndex = imageFrames.count() - 1;
+
+	currentImage = imageFrames.at(imageCurrentFrameIndex).image;
+}
+
+bool Image::loadImageData(const QString& fileName)
+{
+	QElapsedTimer timer;
+	timer.start();
+
+	QFileInfo fileInfo(fileName);
+	imageFilePath = fileInfo.absoluteFilePath();
+	imageFileName = fileInfo.fileName();
+	imageFileType = fileInfo.suffix().toLower();
+
+	QFile imageFile(imageFilePath);
+	if (!imageFile.open(QFile::ReadOnly))
+		return false;
+
+	imageFileData = imageFile.readAll();
+	imageDataSize = static_cast<int>((double)imageFileData.size() / (1024 * 1024) + 0.5);
+
+	imageTimeFileLoad = timer.restart();
+
+	MetadataReader metadataReader;
+	imageMetadata = metadataReader.load(imageFileData, imageFileType);
+
+	imageTimeMetadata = timer.restart();
+	qDebug() << "Preloaded in:" << imageTimeFileLoad + imageTimeMetadata << "ms, cost:" << cacheSize() << "MB, metadata:" << imageTimeMetadata << "ms";
+
+	return true;
+}
+
+void Image::readAllFrameDataReader(QIODevice* device)
+{
 	QImageReader imageReader(imageFilePath);
 	imageReader.setAutoTransform(true);
-	imageData = imageReader.read().convertToFormat(QImage::Format_ARGB32_Premultiplied);
-	return imageReader.transformation();
+
+	// Read all frames
+	imageFrameDataSize = 0;
+	const int imageCount = imageReader.imageCount();
+	for (int i = 0; i < imageCount; i++) {
+		ImageFrame frame;
+		frame.delay = imageReader.nextImageDelay();
+		frame.image = imageReader.read().convertToFormat(QImage::Format_ARGB32_Premultiplied);
+		if (frame.image.isNull())
+			break;
+
+		int size = static_cast<int>((double)frame.image.sizeInBytes() / (1024 * 1024) + 0.5);
+		imageFrameDataSize += size;
+		imageFrames.append(frame);
+
+		imageReader.jumpToNextImage();
+	}
+}
+
+void Image::readAllFrameDataTiff(QIODevice* device)
+{
+	QImageIOHandler* tiffHandler = new QTiffHandler();
+	tiffHandler->setDevice(device);
+	tiffHandler->setFormat("tiff");
+
+	// Read all frames
+	imageFrameDataSize = 0;
+	const int imageCount = tiffHandler->imageCount();
+	for (int i = 0; i < imageCount; i++) {
+		ImageFrame frame;
+		frame.delay = tiffHandler->nextImageDelay();
+
+		QImage img;
+		tiffHandler->read(&img);
+		frame.image = img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+		if (frame.image.isNull())
+			break;
+
+		QImageIOHandler::Transformations t = tiffHandler->option(QImageIOHandler::ImageTransformation).toInt();
+		qt_imageTransform(frame.image, t);
+
+		int size = static_cast<int>((double)frame.image.sizeInBytes() / (1024 * 1024) + 0.5);
+		imageFrameDataSize += size;
+		imageFrames.append(frame);
+
+		tiffHandler->jumpToNextImage();
+	}
+
+	delete tiffHandler;
 }

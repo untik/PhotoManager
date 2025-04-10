@@ -17,6 +17,8 @@ ImageViewerWidget::ImageViewerWidget(QWidget* parent)
 	showImageInformation = true;
 	currentImageNumber = 0;
 	currentImageCount = 0;
+	connect(&animationTimer, &QTimer::timeout, this, &ImageViewerWidget::switchToNextAnimationFrame);
+	animationTimer.setSingleShot(true);
 }
 
 ImageViewerWidget::~ImageViewerWidget()
@@ -38,13 +40,18 @@ void ImageViewerWidget::setImage(const Image& image)
 			svgScaleX = svgRenderer->viewBoxF().width() / svgRenderer->defaultSize().width();
 			svgScaleY = svgRenderer->viewBoxF().height() / svgRenderer->defaultSize().height();
 		}
-	} else if (baseImage.type() == Image::Type::Movie) {
-		if (animationPlayer == nullptr) {
-			animationPlayer = new QMovie(baseImage.absoluteFilePath());
-			animationPlayer->setCacheMode(QMovie::CacheAll);
-			connect(animationPlayer, &QMovie::frameChanged, this, &ImageViewerWidget::movieFrameChanged);
-			animationPlayer->start();
-		}
+	}
+
+	if (baseImage.frameCount() > 1 && baseImage.type() == Image::Type::Movie) {
+		int delay = baseImage.currentFrameDelay();
+		if (delay > 0)
+			animationTimer.start(delay);
+	}
+
+	if (imageInitialZoomLocked) {
+		recalculateCachedPixmap();
+		update();
+		return;
 	}
 
 	QSize viewportSize(this->size());
@@ -136,6 +143,11 @@ void ImageViewerWidget::toggleShowImageInformation()
 	update();
 }
 
+void ImageViewerWidget::toggleImageInitialZoomLock()
+{
+	imageInitialZoomLocked = !imageInitialZoomLocked;
+}
+
 void ImageViewerWidget::setMarkerState(const QMap<char, bool>& markerState)
 {
 	imageMarkerState = markerState;
@@ -151,6 +163,28 @@ void ImageViewerWidget::setMarkerState(char channel, bool isMarked)
 void ImageViewerWidget::setHightlightedMarker(char channel)
 {
 	highlightedMarker = channel;
+	update();
+}
+
+void ImageViewerWidget::nextFrame()
+{
+	if (baseImage.frameCount() == 1)
+		return;
+
+	baseImage.jumpToNextImage();
+	animationTimer.stop();
+	recalculateCachedPixmap();
+	update();
+}
+
+void ImageViewerWidget::previousFrame()
+{
+	if (baseImage.frameCount() == 1)
+		return;
+
+	baseImage.jumpToPreviousImage();
+	animationTimer.stop();
+	recalculateCachedPixmap();
 	update();
 }
 
@@ -187,6 +221,20 @@ void ImageViewerWidget::paintEvent(QPaintEvent* event)
 
 	if (isMarked)
 		painter.fillRect(centeredRect, QBrush(QColor(0, 0, 0, 200), Qt::SolidPattern));
+
+	// Print timing info
+	QString timeStr;
+	timeStr.append(QString::number(baseImage.elapsedTimeFileLoad()));
+	timeStr.append(" ms, ");
+	timeStr.append(QString::number(baseImage.elapsedTimeMetadata()));
+	timeStr.append(" ms, ");
+	timeStr.append(QString::number(baseImage.elapsedTimeBitmapFrames()));
+	timeStr.append(" ms, ");
+	timeStr.append(QString::number(imageTimeRecalculateCache));
+	timeStr.append(" ms, ");
+	timeStr.append(QString::number(baseImage.cacheSize()));
+	timeStr.append(" MB");
+	painter.drawText(QRect(QPoint(2, 70), viewportSize), timeStr);
 
 	//QFont largeFont("Segoe UI", 14);
 	//QFontMetrics largeMetrics = QFontMetrics(largeFont);
@@ -424,7 +472,7 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 	painter->drawText(xOffset, yOffset, QString("%1 %").arg(imageZoomLevel * 100.0));
 
 	// Animation info
-	if (animationPlayer != nullptr) {
+	if (baseImage.frameCount() > 1) {
 		yOffset += separator;
 
 		// Label 'Frames'
@@ -437,7 +485,7 @@ void ImageViewerWidget::renderDescription(QPainter* painter, const Image& image,
 		yOffset += smallLineHeight;
 		painter->setFont(smallFont);
 		painter->setPen(QColor(Qt::white));
-		painter->drawText(xOffset, yOffset, QString::number(animationPlayer->frameCount()));
+		painter->drawText(xOffset, yOffset, QString("%1 / %2").arg(baseImage.currentFrameIndex() + 1).arg(baseImage.frameCount()));
 	}
 
 	// No metadata warning
@@ -495,11 +543,7 @@ void ImageViewerWidget::recalculateCachedPixmap()
 	QElapsedTimer timer;
 	timer.start();
 
-	QImage baseImageData;
-	if (baseImage.type() == Image::Type::Movie)
-		baseImageData = animationPlayer->currentImage();
-	else
-		baseImageData = baseImage.image();
+	//QImage baseImageData= baseImage.image();
 
 	double scale = imageZoomLevel;
 
@@ -511,7 +555,7 @@ void ImageViewerWidget::recalculateCachedPixmap()
 	QSize viewportSize(this->size());
 
 	// Original image size (5472 x 3648)
-	QSize imageSize(baseImageData.size());
+	QSize imageSize(baseImage.size());
 
 	// Size of full image when scaled
 	QSize scaledSize(imageSize * scale);
@@ -568,7 +612,7 @@ void ImageViewerWidget::recalculateCachedPixmap()
 	//preparedImage.renderingOffset = renderingOffset;
 
 	// Test if prepared image data needs to be recalculated
-	bool refreshNeededAnimation = (baseImage.type() == Image::Type::Movie && animationPlayerPreparedFrame != animationPlayer->currentFrameNumber());
+	bool refreshNeededAnimation = (baseImage.type() == Image::Type::Movie && animationPlayerPreparedFrame != baseImage.currentFrameIndex());
 	bool refreshNeededSize = (preparedImage.image.size() != targetSize || preparedImage.sourceRect != limitedSourceAreaRect);
 	if (!refreshNeededAnimation && !refreshNeededSize) {
 		//qDebug() << "Rendering skipped";
@@ -589,7 +633,7 @@ void ImageViewerWidget::recalculateCachedPixmap()
 		//qDebug() << "SVG rendered in:" << timer.elapsed() << "ms";
 	}
 	else {
-		QImage clipped = baseImageData.copy(limitedSourceAreaRect);
+		QImage clipped = baseImage.image().copy(limitedSourceAreaRect);
 
 		int prescaling = 1;
 		if (optimize && mode == Qt::SmoothTransformation) {
@@ -608,6 +652,8 @@ void ImageViewerWidget::recalculateCachedPixmap()
 
 		//qDebug().nospace() << "Scaled in: " << timer.elapsed() << " ms, Prescaling: " << prescaling << "x";
 	}
+
+	imageTimeRecalculateCache = timer.elapsed();
 }
 
 void ImageViewerWidget::invalidateCache()
@@ -618,10 +664,7 @@ void ImageViewerWidget::invalidateCache()
 		delete svgRenderer;
 		svgRenderer = nullptr;
 	}
-	if (animationPlayer != nullptr) {
-		delete animationPlayer;
-		animationPlayer = nullptr;
-	}
+	animationTimer.stop();
 }
 
 int ImageViewerWidget::findClosestValueIndex(const QVector<double>& values, double x)
@@ -638,8 +681,13 @@ int ImageViewerWidget::findClosestValueIndex(const QVector<double>& values, doub
 	return minDistanceIndex;
 }
 
-void ImageViewerWidget::movieFrameChanged(int frameNumber)
+void ImageViewerWidget::switchToNextAnimationFrame()
 {
+	baseImage.jumpToNextImage();
+	int delay = baseImage.currentFrameDelay();
+	if (delay > 0)
+		animationTimer.start(delay);
+
 	recalculateCachedPixmap();
 	update();
 }

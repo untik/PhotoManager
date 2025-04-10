@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <QMap>
+#include <QTimer>
 #include "Image.h"
 
 class QSvgRenderer;
@@ -33,6 +34,7 @@ public:
 	void rotate(double angle);
 
 	void toggleShowImageInformation();
+	void toggleImageInitialZoomLock();
 
 	void setMarkerState(const QMap<char, bool>& markerState);
 	void setMarkerState(char channel, bool isMarked);
@@ -40,6 +42,9 @@ public:
 
 	void recalculate() { invalidateCache(); recalculateCachedPixmap(); update(); }
 	bool optimize = true;
+
+	void nextFrame();
+	void previousFrame();
 
 protected:
 	void paintEvent(QPaintEvent* event) override;
@@ -56,7 +61,7 @@ private:
 	void invalidateCache();
 	int findClosestValueIndex(const QVector<double>& values, double x);
 
-	void movieFrameChanged(int frameNumber);
+	void switchToNextAnimationFrame();
 
 private:
 	struct PreparedImage
@@ -71,7 +76,7 @@ private:
 	QSvgRenderer* svgRenderer = nullptr;
 	double svgScaleX;
 	double svgScaleY;
-	QMovie* animationPlayer = nullptr;
+	QTimer animationTimer;
 	int animationPlayerPreparedFrame = -1;
 
 	double imageZoomLevel;
@@ -89,4 +94,8 @@ private:
 
 	int currentImageNumber;
 	int currentImageCount;
+
+	bool imageInitialZoomLocked = false;
+
+	qint64 imageTimeRecalculateCache = 0;
 };
