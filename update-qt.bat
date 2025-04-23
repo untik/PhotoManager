@@ -3,8 +3,8 @@
 set qtdir=c:\Qt\5.15.2\msvc2019_64
 set projectdir=%~dp0
 
-set vcredistdir="c:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.29.30036\x64\Microsoft.VC142.CRT\"
-set vcredistdird="c:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.29.30036\debug_nonredist\x64\Microsoft.VC142.DebugCRT\"
+set vcredistdir="c:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Redist\MSVC\14.29.30133\x64\Microsoft.VC142.CRT\"
+set vcredistdird="c:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Redist\MSVC\14.29.30133\debug_nonredist\x64\Microsoft.VC142.DebugCRT\"
 set ucrtdir="c:\Program Files (x86)\Windows Kits\10\Redist\10.0.18362.0\ucrt\DLLs\x64\"
 set ucrtdird="c:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\ucrt\"
 
