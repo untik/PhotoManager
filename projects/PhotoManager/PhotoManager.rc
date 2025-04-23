@@ -1,2 +1,37 @@
+#include "winres.h"
+#include "../../include/version.h"
+
 IDI_ICON1		ICON		DISCARDABLE	"PhotoManager.ico"
 
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION VERSION_PROJECT
+PRODUCTVERSION VERSION_PROJECT
+FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+FILEFLAGS 0x1L
+#else
+FILEFLAGS 0x0L
+#endif
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+BLOCK "StringFileInfo"
+BEGIN
+BLOCK "040504b0"
+BEGIN
+VALUE "CompanyName", ""
+VALUE "FileDescription", "PhotoManager"
+VALUE "FileVersion", VERSION_PROJECT_STR
+VALUE "InternalName", "PhotoManager.exe"
+VALUE "LegalCopyright", ""
+VALUE "OriginalFilename", "PhotoManager.exe"
+VALUE "ProductName", "PhotoManager"
+VALUE "ProductVersion", VERSION_PROJECT_STR
+END
+END
+BLOCK "VarFileInfo"
+BEGIN
+VALUE "Translation", 0x405, 1200
+END
+END

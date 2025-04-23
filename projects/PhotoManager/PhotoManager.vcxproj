@@ -93,6 +93,9 @@
       <QtUicDir>.\GeneratedFiles</QtUicDir>
       <QtUicFileName>ui_%(Filename).h</QtUicFileName>
     </QtUic>
+    <PreBuildEvent>
+      <Command>..\..\update-version.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -139,6 +142,9 @@
       <QtUicDir>.\GeneratedFiles</QtUicDir>
       <QtUicFileName>ui_%(Filename).h</QtUicFileName>
     </QtUic>
+    <PreBuildEvent>
+      <Command>..\..\update-version.bat</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\include\qtiff\qtiffhandler.cpp" />
