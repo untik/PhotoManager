@@ -13,3 +13,6 @@
 [submodule "modules/libjpeg-turbo"]
 	path = modules/libjpeg-turbo
 	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
+[submodule "modules/libqpsd"]
+	path = modules/libqpsd
+	url = https://github.com/roniemartinez/libqpsd.git

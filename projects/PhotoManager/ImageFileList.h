@@ -33,6 +33,9 @@ public:
 
 	ImageFileList(QObject* parent = nullptr);
 
+	// Set file types supported by the image loader
+	void setSupportedFileTypes(const QStringList& fileTypeFilter);
+
 	// Load image and marker files from directory containing specified file. Set the file as current image.
 	void setCurrentFile(const QString& fileName);
 

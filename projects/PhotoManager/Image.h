@@ -66,8 +66,10 @@ public:
 
 private:
 	bool loadImageData(const QString& fileName);
-	void readAllFrameDataReader(QIODevice* device);
-	void readAllFrameDataTiff(QIODevice* device);
+	bool readAllFrameDataReader(QIODevice* device);
+	bool readAllFrameDataIoHandler(QImageIOHandler* imageHandler);
+	bool readAllFrameDataTiff(QIODevice* device);
+	bool readAllFrameDataPsd(QIODevice* device);
 
 private:
 	QString imageFilePath;

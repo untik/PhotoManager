@@ -56,7 +56,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>UNICODE;WIN32;WIN64;QT_DISABLE_DEPRECATED_BEFORE=0x060000;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(SolutionDir)vcpkg_installed\x64-windows-v142\include\;$(SolutionDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(SolutionDir)vcpkg_installed\x64-windows-v142\include\;$(SolutionDir)include\;$(SolutionDir)modules\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -100,7 +100,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PreprocessorDefinitions>UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(SolutionDir)vcpkg_installed\x64-windows-v142\include\;$(SolutionDir)include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;.\GeneratedFiles\$(ConfigurationName);.\GeneratedFiles;$(SolutionDir)vcpkg_installed\x64-windows-v142\include\;$(SolutionDir)include\;$(SolutionDir)modules\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
@@ -148,6 +148,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\include\qtiff\qtiffhandler.cpp" />
+    <ClCompile Include="..\..\modules\libqpsd\qpsdhandler.cpp" />
+    <ClCompile Include="..\..\modules\libqpsd\qpsdhandler_p.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="ImageFileList.cpp" />
     <ClCompile Include="ImageProcessor.cpp" />
@@ -170,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\qtiff\qtiffhandler.h" />
+    <ClInclude Include="..\..\modules\libqpsd\qpsdhandler.h" />
     <ClInclude Include="GeneratedFiles\ui_PhotoManagerWindow.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Settings.h" />

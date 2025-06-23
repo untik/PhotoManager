@@ -27,6 +27,9 @@
     <Filter Include="Source Files\qtiff">
       <UniqueIdentifier>{b83d6235-478c-442b-a5fe-d765955a563a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\qpsd">
+      <UniqueIdentifier>{e5c2725e-929c-468c-9555-164fc2aec3b5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -64,6 +67,12 @@
     </ClCompile>
     <ClCompile Include="..\..\include\qtiff\qtiffhandler.cpp">
       <Filter>Source Files\qtiff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\libqpsd\qpsdhandler.cpp">
+      <Filter>Source Files\qpsd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\libqpsd\qpsdhandler_p.cpp">
+      <Filter>Source Files\qpsd</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -116,6 +125,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\qtiff\qtiffhandler.h">
       <Filter>Source Files\qtiff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\modules\libqpsd\qpsdhandler.h">
+      <Filter>Source Files\qpsd</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

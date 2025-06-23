@@ -41,6 +41,7 @@ PhotoManagerWindow::PhotoManagerWindow(const QStringList& files, QWidget* parent
 	QFileInfo fileInfo(fileName);
 
 	fileList = new ImageFileList();
+	fileList->setSupportedFileTypes({"*.jpg", "*.jpeg", "*jpe", "*.gif", "*.tif", "*.tiff", "*.png", "*.webp", "*tga", "*.svg", "*.svgz", "*.ico", "*psd", "*psb"});
 	fileList->setCurrentFile(fileInfo.absoluteFilePath());
 
 	imageProcessor->loadImage(fileList->fileAtOffset(0).fullFilePath);

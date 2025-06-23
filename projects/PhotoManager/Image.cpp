@@ -7,6 +7,7 @@
 #include <QDebug>
 #include "MetadataReader.h"
 #include "qtiff/qtiffhandler.h"
+#include "libqpsd/qpsdhandler.h"
 
 extern void qt_imageTransform(QImage& src, QImageIOHandler::Transformations orient);
 
@@ -38,11 +39,14 @@ void Image::load(const QString& fileName)
 	QBuffer buffer(&imageFileData);
 	buffer.open(QIODevice::ReadOnly);
 
-	if (imageFileType == "tif" || imageFileType == "tiff") {
-		readAllFrameDataTiff(&buffer);
-	} else {
-		readAllFrameDataReader(&buffer);
-	}
+	// Try all available readers
+	bool finishedRead = false;
+	if (!finishedRead)
+		finishedRead = readAllFrameDataPsd(&buffer);
+	if (!finishedRead)
+		finishedRead = readAllFrameDataTiff(&buffer);
+	if (!finishedRead)
+		finishedRead = readAllFrameDataReader(&buffer);
 
 	buffer.close();
 	imageFileData.clear();
@@ -56,7 +60,7 @@ void Image::load(const QString& fileName)
 
 	currentImage = imageFrames.at(0).image;
 
-	if (imageFileType == "svg") {
+	if (imageFileType == "svg" || imageFileType == "svgz") {
 		imageType = Type::Vector;
 	} else if (imageFrames.count() > 1) {
 		imageType = Type::Movie;
@@ -140,10 +144,13 @@ bool Image::loadImageData(const QString& fileName)
 	return true;
 }
 
-void Image::readAllFrameDataReader(QIODevice* device)
+bool Image::readAllFrameDataReader(QIODevice* device)
 {
 	QImageReader imageReader(imageFilePath);
 	imageReader.setAutoTransform(true);
+
+	if (!imageReader.canRead())
+		return false;
 
 	// Read all frames
 	imageFrameDataSize = 0;
@@ -161,36 +168,56 @@ void Image::readAllFrameDataReader(QIODevice* device)
 
 		imageReader.jumpToNextImage();
 	}
+
+	return true;
 }
 
-void Image::readAllFrameDataTiff(QIODevice* device)
+bool Image::readAllFrameDataIoHandler(QImageIOHandler* imageHandler)
 {
-	QImageIOHandler* tiffHandler = new QTiffHandler();
-	tiffHandler->setDevice(device);
-	tiffHandler->setFormat("tiff");
-
 	// Read all frames
 	imageFrameDataSize = 0;
-	const int imageCount = tiffHandler->imageCount();
+	const int imageCount = imageHandler->imageCount();
 	for (int i = 0; i < imageCount; i++) {
 		ImageFrame frame;
-		frame.delay = tiffHandler->nextImageDelay();
+		frame.delay = imageHandler->nextImageDelay();
 
 		QImage img;
-		tiffHandler->read(&img);
+		imageHandler->read(&img);
 		frame.image = img.convertToFormat(QImage::Format_ARGB32_Premultiplied);
 		if (frame.image.isNull())
 			break;
 
-		QImageIOHandler::Transformations t = tiffHandler->option(QImageIOHandler::ImageTransformation).toInt();
+		QImageIOHandler::Transformations t = imageHandler->option(QImageIOHandler::ImageTransformation).toInt();
 		qt_imageTransform(frame.image, t);
 
 		int size = static_cast<int>((double)frame.image.sizeInBytes() / (1024 * 1024) + 0.5);
 		imageFrameDataSize += size;
 		imageFrames.append(frame);
 
-		tiffHandler->jumpToNextImage();
+		imageHandler->jumpToNextImage();
 	}
 
-	delete tiffHandler;
+	return true;
+}
+
+bool Image::readAllFrameDataTiff(QIODevice* device)
+{
+	QScopedPointer<QImageIOHandler> tiffHandler(new QTiffHandler());
+	tiffHandler->setDevice(device);
+
+	if (!tiffHandler->canRead())
+		return false;
+
+	return readAllFrameDataIoHandler(tiffHandler.data());
+}
+
+bool Image::readAllFrameDataPsd(QIODevice* device)
+{
+	QScopedPointer<QImageIOHandler> psdHandler(new QPsdHandler());
+	psdHandler->setDevice(device);
+
+	if (!psdHandler->canRead())
+		return false;
+
+	return readAllFrameDataIoHandler(psdHandler.data());
 }

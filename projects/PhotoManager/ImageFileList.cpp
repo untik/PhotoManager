@@ -6,7 +6,7 @@ ImageFileList::ImageFileList(QObject* parent)
 	: QObject(parent), fileListCurrentIndex(-1), isWrapAroundAllowed(true), fileListFilteredCount(0)
 {
 	fileListFilterMode = FilterNone;
-	fileListNameFilters << "*.jpg" << "*.jpeg" << "*.gif" << "*.tif" << "*.tiff" << "*.png" << "*.webp" << "*tga" << "*.svg" << "*.ico";
+	fileListNameFilters << "*.jpg" << "*.jpeg";
 
 	markerFiles.insert(Marker1, new MarkerFile("selection-1.txt", Marker1)); // *.photolist
 	markerFiles.insert(Marker2, new MarkerFile("selection-2.txt", Marker2));
@@ -14,6 +14,11 @@ ImageFileList::ImageFileList(QObject* parent)
 	markerFiles.insert(Marker4, new MarkerFile("selection-4.txt", Marker4));
 	markerFiles.insert(Marker5, new MarkerFile("selection-5.txt", Marker5));
 	markerFiles.insert(MarkerDelete, new MarkerFile("selection-X.txt", MarkerDelete));
+}
+
+void ImageFileList::setSupportedFileTypes(const QStringList& fileTypeFilter)
+{
+	fileListNameFilters = fileTypeFilter;
 }
 
 void ImageFileList::setCurrentFile(const QString& fileName)
